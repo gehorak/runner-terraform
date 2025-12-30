@@ -54,6 +54,25 @@ RUN mkdir -p /etc/runner \
 
 
 # =============================================================================
+# TOOL: tf - Terraform
+# =============================================================================
+RUN set -Eeuo pipefail; \
+    source /etc/runner/tools.env; \
+    \
+    : "${TOOL_TERRAFORM_VERSION:?Missing TOOL_TERRAFORM_VERSION}"; \
+    : "${TOOL_TERRAFORM_SHA256:?Missing TOOL_TERRAFORM_SHA256}"; \
+    \
+    echo "==> Installing terraform ${TOOL_TERRAFORM_VERSION}"; \
+    curl -fsSLo /tmp/terraform.zip \
+      "https://releases.hashicorp.com/terraform/${TOOL_TERRAFORM_VERSION}/terraform_${TOOL_TERRAFORM_VERSION}_linux_amd64.zip"; \
+    echo "${TOOL_TERRAFORM_SHA256}  /tmp/terraform.zip" | sha256sum -c -; \
+    unzip /tmp/terraform.zip -d /usr/local/bin; \
+    rm -f /tmp/terraform.zip
+
+
+
+
+# =============================================================================
 # Runtime execution context (INHERITED FROM runner-base)
 #
 # NOTE:

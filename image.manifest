@@ -102,6 +102,23 @@ RUNTIME_WORKDIR=/workspace
 
 
 # -----------------------------------------------------------------------------
+# Tooling — Terraform domain
+#
+# Rules:
+# - Versions are immutable for a given image tag
+# - SHA256 checksums are mandatory
+# - No tool may be installed without a checksum
+# -----------------------------------------------------------------------------
+
+#tf
+#https://releases.hashicorp.com/terraform/1.14.2/
+#https://github.com/hashicorp/terraform/releases/tag/v1.14.2
+TOOL_TERRAFORM_VERSION=1.14.2
+TOOL_TERRAFORM_SHA256=8314673d57e9fb8e01bfc98d074f51f7efb6e55484cfb2b10baed686de2190da
+
+
+
+# -----------------------------------------------------------------------------
 # Auxiliary system tools
 #
 # These tools are exposed only via explicit `exec` usage.
