@@ -53,6 +53,24 @@ RUN mkdir -p /etc/runner \
  && chmod 0444 /etc/runner/*.env
 
 
+# =============================================================================
+# Runtime execution context (INHERITED FROM runner-base)
+#
+# NOTE:
+# - Runtime user, UID/GID, HOME and WORKDIR are defined in runner-base
+# - This image MUST NOT modify runtime execution context
+# - Values are applied here only to make inheritance explicit
+# =============================================================================
+
+
+# =============================================================================
+# Runner plugins
+# =============================================================================
+COPY runner.d/ /usr/local/lib/runner.d/
+RUN chmod +x /usr/local/lib/runner.d/* \
+  && chown -R 10001:10001 /usr/local/lib/runner.d/
+#&& chown -R ${RUNTIME_USER_UID}:${RUNTIME_USER_GID} /usr/local/lib/runner.d/
+
 
 # =============================================================================
 # Set runtime user and working directory

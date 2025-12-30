@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# =============================================================================
+# tf — Terraform CLI wrapper
+#
+# PURPOSE
+# -------
+# Short, explicit alias for the terraform CLI.
+#
+# DESIGN PRINCIPLES
+# -----------------
+# - No implicit behavior
+# - No argument rewriting
+# - No environment mutation
+# - 1:1 passthrough to terraform
+#
+# This plugin exists purely for UX convenience.
+# =============================================================================
+
+set -Eeuo pipefail
+
+# -----------------------------------------------------------------------------
+# Preconditions
+# -----------------------------------------------------------------------------
+if ! command -v terraform >/dev/null 2>&1; then
+  echo "ERROR: terraform binary not found" >&2
+  echo "HINT: check TOOL_TERRAFORM_* entries in image.manifest" >&2
+  exit 127
+fi
+
+# -----------------------------------------------------------------------------
+# Execute
+# -----------------------------------------------------------------------------
+exec terraform "$@"
