@@ -1,5 +1,5 @@
 # =============================================================================
-# Release workflow — runner-base
+# Release workflow — runner-terraform
 #
 # PURPOSE
 # -------
@@ -148,15 +148,15 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/gehorak/runner-base
+            ghcr.io/gehorak/runner-terraform
           tags: |
             type=raw,value=${{ steps.semver.outputs.version }}
             type=raw,value=${{ steps.semver.outputs.version_mm }}
             type=raw,value=latest
           labels: |
-            org.opencontainers.image.title=runner-base
-            org.opencontainers.image.description=Deterministic base runner image
-            org.opencontainers.image.source=https://github.com/gehorak/runner-base
+            org.opencontainers.image.title=runner-terraform
+            org.opencontainers.image.description=Deterministic terraform runner image
+            org.opencontainers.image.source=https://github.com/gehorak/runner-terraform
             org.opencontainers.image.version=${{ steps.semver.outputs.version }}
             org.opencontainers.image.revision=${{ steps.semver.outputs.commit }}
             org.opencontainers.image.created=${{ github.run_started_at }}

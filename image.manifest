@@ -49,9 +49,9 @@ RUNNER_PLATFORM=runner
 #   of the image, independent of internal restructuring.
 # -----------------------------------------------------------------------------
 
-RUNNER_IMAGE=runner-base
-RUNNER_DOMAIN=base
-RUNNER_ROLE=base
+RUNNER_IMAGE=runner-terraform
+RUNNER_DOMAIN=terraform
+RUNNER_ROLE=terraform
 
 
 # -----------------------------------------------------------------------------
@@ -61,10 +61,10 @@ RUNNER_ROLE=base
 # These values provide context, ownership, and traceability.
 # -----------------------------------------------------------------------------
 
-RUNNER_DESCRIPTION="Deterministic runner base image"
+RUNNER_DESCRIPTION="Deterministic runner terraform image"
 RUNNER_VENDOR=gehorak
 RUNNER_LICENSE=MIT
-RUNNER_REPOSITORY=https://github.com/gehorak/runner-base
+RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
 
 
 # -----------------------------------------------------------------------------

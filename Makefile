@@ -28,7 +28,7 @@
 # Can be overridden:
 
 # Image identity (must never change across environments)
-IMAGE_NAME ?= runner-base
+IMAGE_NAME ?= runner-terraform
 # Image tag (context: dev, ci, test, release)
 IMAGE_TAG  ?= dev
 # Fully qualified image reference
@@ -39,7 +39,9 @@ IMAGE := $(IMAGE_NAME):$(IMAGE_TAG)
 BUILD_CONTEXT ?= .
 # Directory containing test scripts
 CI_DIR := ci
+# Image manifest file
 IMAGE_MANIFEST := image.manifest
+# AWK command
 AWK ?= awk
 
 # -----------------------------------------------------------------------------
@@ -93,7 +95,7 @@ help:
 	@echo "Variables:"
 	@echo "  IMAGE_NAME=$(IMAGE_NAME)"
 	@echo "  IMAGE_TAG=$(IMAGE_TAG)"
-	@echo "  IMAGE=$(IMAGE)" Docker image tag (default: runner-base:dev)"
+	@echo "  IMAGE=$(IMAGE)" Docker image tag (default: runner-terraform:dev)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make build"

@@ -1,18 +1,40 @@
-# runner-base
+# runner-terraform
 
-`runner-base` provides a **deterministic container image**
-designed for infrastructure, automation, and CI workflows.
+Deterministic Terraform runner image built on top of **runner-base**.
 
-The image follows a **strict execution model** focused on:
+This image provides Terraform tooling exposed through the runner
+execution model, designed for explicit, predictable, and CI-safe
+infrastructure workflows.
 
-* explicit behavior
-* reproducibility
-* auditability
-* long-term operational stability  
+---
 
-This repository is the **base component of the runner tooling platform**.
-All domain-specific runner images are built on top of this image.
+## Status
 
+This repository is a **derived runner image**.
+It fully inherits the runner platform contract from `runner-base`
+and does not redefine core execution semantics.
+
+The documentation below is currently inherited from `runner-base`
+and will be **progressively adapted and finalized at release time**
+to reflect Terraform-specific usage.
+
+Until then:
+- platform behavior is authoritative
+- domain tooling documentation is intentionally minimal
+
+
+---  
+## Inherited Documentation (runner-base)
+
+The content below this section is **temporarily inherited verbatim**
+from `runner-base`.  
+
+It describes the shared runner platform behavior and execution contract.
+Terraform-specific documentation will replace or extend these sections
+as part of the first stable release.  
+
+## Inherited content starts here
+<!-- Inherited content starts here -->
 ---
 
 ## What this image is
