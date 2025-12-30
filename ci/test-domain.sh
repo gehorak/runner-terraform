@@ -41,9 +41,29 @@ echo
 # - Tests MUST validate behavior, not just existence
 # -----------------------------------------------------------------------------
 
-echo "==> Domain tests: no domain-specific tests defined"
-echo "==> This is expected for images without domain tooling"
+echo "==> Domain test: terraform version via runner version"
 
+version_output="$(docker run --rm "${IMAGE}" version)"
+
+echo "${version_output}"
+
+if ! echo "${version_output}" | grep -q '^terraform '; then
+  echo "ERROR: terraform not reported by version command" >&2
+  exit 1
+fi
+
+expected_version="$(
+  echo "${version_output}" \
+    | awk '$1 == "terraform" { print $2 }'
+)"
+
+if [ -z "${expected_version}" ]; then
+  echo "ERROR: terraform version is empty" >&2
+  exit 1
+fi
+
+echo "==> Detected terraform version: ${expected_version}"
+echo "==> Domain test passed: terraform reported via version"
 
 # -----------------------------------------------------------------------------
 # Test completion

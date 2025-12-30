@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# =============================================================================
+# version — tool version report (runner-terraform)
+#
+# PURPOSE
+# -------
+# Human-friendly overview of installed tooling versions.
+#
+# DESIGN PRINCIPLES
+# -----------------
+# - Deterministic output
+# - No auto-detection
+# - Manifest-driven
+# - CI- and audit-friendly
+# =============================================================================
+
+set -Eeuo pipefail
+
+IMAGE_ENV="/etc/runner/image.env"
+TOOLS_ENV="/etc/runner/tools.env"
+
+# ---------------------------------------------------------------------
+# Load image identity
+# ---------------------------------------------------------------------
+# shellcheck disable=SC1090
+if [ -f "$IMAGE_ENV" ]; then
+  source "$IMAGE_ENV"
+else
+  echo "ERROR: image identity file missing ($IMAGE_ENV)" >&2
+  exit 1
+fi
+
+echo "${RUNNER_IMAGE}"
+echo "----------------"
+echo
+echo "Tool versions:"
+
+# -----------------------------------------------------------------------------
+# Tool versions (manifest-driven)
+# -----------------------------------------------------------------------------
+if [ -f "$TOOLS_ENV" ]; then
+  # shellcheck disable=SC1090
+  source "$TOOLS_ENV"
+
+  print_tool() {
+    local label="$1"
+    local version="$2"
+    printf "%-17s %s\n" "$label" "$version"
+  }
+
+  [ -n "${TOOL_TERRAFORM_VERSION:-}" ]        && print_tool "terraform"        "$TOOL_TERRAFORM_VERSION"
+  
+else
+  echo "WARNING: tools declaration file missing ($TOOLS_ENV)" >&2
+fi
