@@ -28,7 +28,7 @@ build:
 	  .
 
 lint:
-	bash -n build/install-terraform.sh
+	bash -n scripts/install-terraform.sh
 	bash -n $(DOMAIN_TEST)
 	python3 -m json.tool $(TOOLS_LOCK) >/dev/null
 
