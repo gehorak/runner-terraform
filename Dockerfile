@@ -19,12 +19,12 @@ COPY contracts/tools-lock/v001/tools.lock.json /tmp/runner-terraform.tools.lock.
 COPY build/install-terraform.sh /usr/local/lib/runner-terraform/install-terraform.sh
 
 RUN chmod 0755 /usr/local/lib/runner-terraform/install-terraform.sh \
- && /usr/local/lib/runner-terraform/install-terraform.sh /tmp/runner-terraform.tools-lock.json \
+ && /usr/local/lib/runner-terraform/install-terraform.sh /tmp/runner-terraform.tools.lock.json \
  && . /usr/local/lib/runner/metadata.sh \
  && runner_metadata_materialize_derived_manifest /tmp/runner-terraform.image.manifest \
  && rm -f \
       /tmp/runner-terraform.image.manifest \
-      /tmp/runner-terraform.tools-lock.json \
+      /tmp/runner-terraform.tools.lock.json \
       /usr/local/lib/runner-terraform/install-terraform.sh \
  && rmdir /usr/local/lib/runner-terraform
 
