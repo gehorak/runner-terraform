@@ -15,8 +15,31 @@ permissions:
   packages: read
 
 jobs:
+  verify-parent:
+    name: Verify immutable runner-base parent
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull exact parent reference
+        shell: bash
+        env:
+          BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
+        run: |
+          set -Eeuo pipefail
+          [[ "${BASE_REFERENCE}" =~ ^ghcr\.io/gehorak/runner-base:[0-9]+\.[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$ ]] || {
+            echo "ERROR: parent reference is not immutable SemVer plus digest" >&2
+            exit 1
+          }
+          docker pull "${BASE_REFERENCE}"
+          observed="$(docker image inspect --format '{{index .RepoDigests 0}}' "${BASE_REFERENCE}")"
+          [[ "${observed}" == "ghcr.io/gehorak/runner-base@${BASE_REFERENCE##*@}" ]] || {
+            echo "ERROR: pulled parent digest does not match ${BASE_REFERENCE}" >&2
+            echo "Observed: ${observed}" >&2
+            exit 1
+          }
+
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract
+    needs: verify-parent
     uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f
     with:
       image: runner-terraform:conformance
