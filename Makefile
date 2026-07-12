@@ -32,8 +32,6 @@ lint:
 	bash -n $(DOMAIN_TEST)
 	python3 -m json.tool $(TOOLS_LOCK) >/dev/null
 
-gomain-test: domain-test
-
 domain-test: build
 	IMAGE="$(IMAGE)" \
 	BASE_REFERENCE="$(BASE_IMAGE)" \
@@ -47,7 +45,6 @@ conformance: build
 	  https://github.com/gehorak/runner-base.git \
 	  "$(CONFORMANCE_DIR)"
 	test "$$(git -C "$(CONFORMANCE_DIR)" rev-parse HEAD)" = "$(RUNNER_CONFORMANCE_REF)"
-	IMAGE="$(IMAGE)" \
 	bash "$(CONFORMANCE_DIR)/ci/derived-conformance.sh" \
 	  --image "$(IMAGE)" \
 	  --base-reference "$(BASE_IMAGE)" \
