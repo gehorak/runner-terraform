@@ -16,13 +16,15 @@ permissions:
 
 jobs:
   verify-parent:
-    name: Verify immutable runner-base parent
+    name: Verify immutable parent and locked Terraform input
     runs-on: ubuntu-latest
+    env:
+      BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
+      TERRAFORM_SOURCE: https://releases.hashicorp.com/terraform/1.14.2/terraform_1.14.2_linux_amd64.zip
+      TERRAFORM_SHA256: 8314673d57e9fb8e01bfc98d074f51f7efb6e55484cfb2b10baed686de2190da
     steps:
       - name: Pull exact parent reference
         shell: bash
-        env:
-          BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
         run: |
           set -Eeuo pipefail
           [[ "${BASE_REFERENCE}" =~ ^ghcr\.io/gehorak/runner-base:[0-9]+\.[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$ ]] || {
@@ -36,6 +38,40 @@ jobs:
             echo "Observed: ${observed}" >&2
             exit 1
           }
+
+      - name: Validate derived overlay against parent materializer
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --user 0 --entrypoint /bin/bash "${BASE_REFERENCE}" -Eeuo pipefail -c '
+            cat >/tmp/derived.manifest <<"EOF"
+          RUNNER_IMAGE=runner-terraform
+          RUNNER_DOMAIN=terraform
+          RUNNER_ROLE=terraform
+          RUNNER_IMAGE_VERSION=0.1.0
+          RUNNER_IMAGE_REVISION=local
+          RUNNER_DESCRIPTION=Deterministic Terraform runner derived from runner-base
+          RUNNER_VENDOR=gehorak
+          RUNNER_LICENSE=MIT
+          RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
+          RUNNER_TOOL_NAMES=terraform
+          RUNNER_TOOL_TERRAFORM_VERSION=1.14.2
+          RUNNER_TOOL_TERRAFORM_EXECUTABLE=/usr/local/bin/terraform
+          RUNNER_TOOL_TERRAFORM_ALIASES=tf
+          EOF
+            . /usr/local/lib/runner/metadata.sh
+            runner_metadata_materialize_derived_manifest /tmp/derived.manifest
+          '
+
+      - name: Verify locked Terraform archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          archive="$(mktemp)"
+          trap 'rm -f "${archive}"' EXIT
+          curl --proto '=https' --tlsv1.2 -fsSLo "${archive}" "${TERRAFORM_SOURCE}"
+          printf '%s  %s\n' "${TERRAFORM_SHA256}" "${archive}" | sha256sum -c -
+          unzip -tq "${archive}" >/dev/null
 
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract
