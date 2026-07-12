@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "tools": [
+    {
+      "name": "terraform",
+      "version": "1.14.2",
+      "source": "https://releases.hashicorp.com/terraform/1.14.2/terraform_1.14.2_linux_amd64.zip",
+      "sha256": "8314673d57e9fb8e01bfc98d074f51f7efb6e55484cfb2b10baed686de2190da"
+    }
+  ]
+}
