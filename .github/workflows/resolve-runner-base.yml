@@ -1,0 +1,24 @@
+name: Resolve runner-base reference
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  resolve:
+    name: Resolve immutable runner-base v0.3.0 digest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve published manifest digest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          reference="ghcr.io/gehorak/runner-base:0.3.0"
+          digest="sha256:$(docker buildx imagetools inspect --raw "${reference}" | sha256sum | cut -d ' ' -f 1)"
+          echo "BASE_REFERENCE=${reference}@${digest}"
+          echo "${reference}@${digest}" >> "${GITHUB_STEP_SUMMARY}"
