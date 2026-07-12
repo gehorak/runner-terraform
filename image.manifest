@@ -1,140 +1,21 @@
-# =============================================================================
-# Runner Image Manifest
+# runner-terraform derived-image overlay for runner-base v0.3.0.
 #
-# This file defines the immutable identity and execution context
-# of a runner image.
-#
-# It is a build-time artifact and MUST NOT be modified at runtime.
-#
-# Design goals:
-# - Human-readable and self-explanatory
-# - Stable and meaningful over many years
-# - Single source of truth for image identity
-# - Additive-only evolution (no breaking changes)
-#
-# Consumers:
-# - runner (core CLI)
-# - CI contract tests
-# - operators and maintainers
-# =============================================================================
-
-
-# Manifest format version.
-# Increment only if backward compatibility is intentionally broken.
-MANIFEST_SCHEMA_VERSION=1
-
-
-# -----------------------------------------------------------------------------
-# Platform identification
-#
-# These values identify the logical runner platform.
-# They are shared across all images belonging to the same ecosystem.
-# -----------------------------------------------------------------------------
-
-RUNNER_PLATFORM=runner
-
-
-# -----------------------------------------------------------------------------
-# Image identity
-#
-# RUNNER_IMAGE
-#   Canonical name of the container image.
-#
-# RUNNER_DOMAIN
-#   Functional domain (e.g. base, ansible, terraform).
-#   Used for classification only — never for runtime behavior.
-#
-# RUNNER_ROLE
-#   Stable role identifier describing the long-term purpose
-#   of the image, independent of internal restructuring.
-# -----------------------------------------------------------------------------
+# This file intentionally contains only derived image identity and declarative
+# tool registry fields. Runner version, contract version, platform, runtime user,
+# HOME, shell, workdir, parser, and entrypoint remain parent-owned.
 
 RUNNER_IMAGE=runner-terraform
 RUNNER_DOMAIN=terraform
 RUNNER_ROLE=terraform
+RUNNER_IMAGE_VERSION=0.1.0
+RUNNER_IMAGE_REVISION=local
 
-
-# -----------------------------------------------------------------------------
-# Human-facing metadata
-#
-# Informational fields for operators, reviewers, and maintainers.
-# These values provide context, ownership, and traceability.
-# -----------------------------------------------------------------------------
-
-RUNNER_DESCRIPTION="Deterministic runner terraform image"
+RUNNER_DESCRIPTION=Deterministic Terraform runner derived from runner-base
 RUNNER_VENDOR=gehorak
 RUNNER_LICENSE=MIT
 RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
 
-
-# -----------------------------------------------------------------------------
-# Runtime execution context
-#
-# Defines the default execution environment inside the container.
-# These values describe *how* the image runs, not *what* it provides.
-# -----------------------------------------------------------------------------
-# RUNTIME_USER_NAME or workspace change too in Dockerfile "Runtime defaults (apply runtime contract)"
-# must change manual and indetict in manifest Dockerfile ARG.
-
-
-RUNTIME_USER_NAME=runner
-RUNTIME_USER_UID=10001
-RUNTIME_USER_GID=10001
-RUNTIME_USER_HOME=/home/runner
-
-RUNTIME_SHELL=/bin/bash
-
-RUNTIME_WORKDIR=/workspace
-
-
-# -----------------------------------------------------------------------------
-# Tooling (domain-specific)
-#
-# Rules:
-# - Tool versions are immutable for a given image tag
-# - SHA256 checksums are mandatory
-# - No tool may be installed without a verified checksum
-#
-# Base images may leave this section empty.
-# -----------------------------------------------------------------------------
-# TOOL_<NAME>_VERSION=0.0.0
-# TOOL_<NAME>_SHA256=<REAL_SHA256_VALUE>
-
-
-# -----------------------------------------------------------------------------
-# Tooling — Terraform domain
-#
-# Rules:
-# - Versions are immutable for a given image tag
-# - SHA256 checksums are mandatory
-# - No tool may be installed without a checksum
-# -----------------------------------------------------------------------------
-
-#tf
-#https://releases.hashicorp.com/terraform/1.14.2/
-#https://github.com/hashicorp/terraform/releases/tag/v1.14.2
-TOOL_TERRAFORM_VERSION=1.14.2
-TOOL_TERRAFORM_SHA256=8314673d57e9fb8e01bfc98d074f51f7efb6e55484cfb2b10baed686de2190da
-
-
-
-# -----------------------------------------------------------------------------
-# Auxiliary system tools
-#
-# These tools are exposed only via explicit `exec` usage.
-# They MUST NOT introduce implicit runner behavior.
-# -----------------------------------------------------------------------------
-# TOOL_<NAME>_VERSION=0.0.0
-# TOOL_<NAME>_SHA256=<REAL_SHA256_VALUE>
-
-
-# -----------------------------------------------------------------------------
-# End of file
-#
-# Contract rules:
-# - Keys are UPPER_SNAKE_CASE
-# - Values must be literal and shell-safe
-# - Existing keys MUST NOT change semantics
-# - New keys may be added only in a backward-compatible manner
-#
-# =============================================================================
+RUNNER_TOOL_NAMES=terraform
+RUNNER_TOOL_TERRAFORM_VERSION=1.14.2
+RUNNER_TOOL_TERRAFORM_EXECUTABLE=/usr/local/bin/terraform
+RUNNER_TOOL_TERRAFORM_ALIASES=tf
