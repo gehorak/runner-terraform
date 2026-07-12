@@ -38,14 +38,6 @@ Canonical invocation:
 runner tool terraform [arguments...]
 ```
 
-The `tf` name is a declared v0.3 compatibility alias:
-
-```text
-runner tool tf [arguments...]
-```
-
-The alias emits a deprecation warning and is not a canonical tool identity.
-
 ## Local validation
 
 Run from Linux or WSL with Docker, Git, Bash, Make, and Python 3 available:

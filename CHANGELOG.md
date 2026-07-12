@@ -12,19 +12,21 @@ Semantic Versioning. No public `runner-terraform` release exists yet.
 - Terraform 1.14.2 integrity evidence in `tools.lock` v001.
 - Commit-pinned Runner base conformance and explicit Terraform domain tests.
 - Offline Terraform initialization and validation fixture using `terraform_data`.
+- Source-contract consistency validation for the parent, conformance, contract,
+  and Terraform version references.
 
 ### Changed
 
 - Rebuilt the repository as a strict derived image instead of carrying an
   inherited copy of the base implementation.
 - Replaced plugin-directory discovery with declarative `RUNNER_TOOL_*` metadata.
-- Made `runner tool terraform` the canonical Terraform interface; `tf` remains
-  only a declared compatibility alias.
+- Made `runner tool terraform` the only Terraform interface.
 
 ### Removed
 
 - Derived ownership of runtime user fields, entrypoint behavior, metadata
   parsing, base contract tests, and inherited base documentation.
+- The `tf` compatibility alias and redundant derived `WORKDIR /workspace`.
 - The pre-conformance release workflow; image publication remains deferred until
   this reference candidate has passed review and conformance.
 

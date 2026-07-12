@@ -27,7 +27,6 @@ RUN chmod 0755 /tmp/runner-terraform.install-terraform.sh \
       /tmp/runner-terraform.tools.lock.json \
       /tmp/runner-terraform.install-terraform.sh
 
-# Re-assert the inherited runtime context after the root-only build layer.
-# The entrypoint and command remain inherited unchanged from runner-base.
+# Re-assert the inherited runtime user after the root-only build layer.
+# The entrypoint, command, and workdir remain inherited from runner-base.
 USER runner
-WORKDIR /workspace

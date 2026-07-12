@@ -38,7 +38,9 @@ The base bundle validates:
 - Runner 0.3.0 and contract v001 are inherited unchanged;
 - image identity, runtime identity, and the Terraform registry entry are exact;
 - `runner tool terraform` executes Terraform 1.14.2;
-- the declared `tf` compatibility alias works and emits its warning;
+- source references remain consistent across the build, CI, local validation,
+  domain test, and candidate documentation;
+- a Terraform child failure preserves exit code 1 through `runner tool`;
 - an unknown tool fails with exit code 4 and `RUNNER_E_NOT_FOUND`;
 - a minimal offline configuration can be formatted, initialized, and validated
   as the inherited non-root runtime user.

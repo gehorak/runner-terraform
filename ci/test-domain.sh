@@ -7,6 +7,9 @@ IMAGE="${IMAGE:?IMAGE variable must be set}"
 BASE_REFERENCE="${BASE_REFERENCE:?BASE_REFERENCE variable must be set}"
 RUNNER_CONFORMANCE_VERSION="${RUNNER_CONFORMANCE_VERSION:?RUNNER_CONFORMANCE_VERSION variable must be set}"
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+python3 "${SCRIPT_DIR}/test-source-contract.py"
+
 EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003"
 EXPECTED_RUNNER_VERSION="runner 0.3.0 (contract v001)"
 EXPECTED_TERRAFORM_VERSION="1.14.2"
@@ -58,7 +61,7 @@ assert info["tools"] == [
     {
         "name": "terraform",
         "version": expected_terraform,
-        "aliases": ["tf"],
+        "aliases": [],
     }
 ]
 PY
@@ -70,11 +73,13 @@ grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terra
 scratch="$(mktemp -d)"
 trap 'rm -rf "${scratch}"' EXIT
 
-if ! docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool tf version >"${scratch}/alias.out" 2>"${scratch}/alias.err"; then
-  fail "declared tf alias failed"
-fi
-grep -Fq "DEPRECATED: tool alias 'tf'" "${scratch}/alias.err" \
-  || fail "declared tf alias did not emit the compatibility warning"
+set +e
+docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terraform version -invalid-flag \
+  >"${scratch}/terraform-child-failure.out" 2>"${scratch}/terraform-child-failure.err"
+terraform_child_status=$?
+set -e
+[[ ${terraform_child_status} -eq 1 ]] \
+  || fail "Terraform child failure returned ${terraform_child_status}, expected 1"
 
 set +e
 docker run --rm "${IMAGE}" tool missing-tool >"${scratch}/missing.out" 2>"${scratch}/missing.err"
