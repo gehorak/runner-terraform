@@ -1,229 +1,104 @@
 # runner-terraform
 
-Deterministic Terraform runner image built on top of **runner-base**.
-
-This image provides Terraform tooling exposed through the runner
-execution model, designed for explicit, predictable, and CI-safe
-infrastructure workflows.
-
----
+`runner-terraform` is the reference Terraform-derived image for the Runner
+platform. It adds one domain tool to the immutable runtime and CLI contract
+owned by `runner-base`.
 
 ## Status
 
-This repository is a **derived runner image**.
-It fully inherits the runner platform contract from `runner-base`
-and does not redefine core execution semantics.
+Reference candidate for the first repository-level adoption of the
+`runner-base` v0.3.0 derived-image contract. This repository has no published
+`runner-terraform` tag or release yet.
 
-The documentation below is currently inherited from `runner-base`
-and will be **progressively adapted and finalized at release time**
-to reflect Terraform-specific usage.
+The candidate is bound to:
 
-Until then:
-- platform behavior is authoritative
-- domain tooling documentation is intentionally minimal
+- parent: `ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003`;
+- Runner contract: `v001`;
+- conformance bundle: `runner-base` commit `4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f`;
+- Terraform: `1.14.2` for `linux/amd64`.
 
+## Derived-image boundary
 
----  
-## Inherited Documentation (runner-base)
+This repository owns only:
 
-The content below this section is **temporarily inherited verbatim**
-from `runner-base`.  
+- the `runner-terraform` overlay identity;
+- Terraform installation and integrity evidence;
+- Terraform tool registration;
+- Terraform-specific tests and documentation.
 
-It describes the shared runner platform behavior and execution contract.
-Terraform-specific documentation will replace or extend these sections
-as part of the first stable release.  
+It does not own or replace the Runner dispatcher, metadata parser, entrypoint,
+runtime user, `HOME`, shell, workdir, base commands, or parent runtime files.
+Those remain inherited unchanged from the pinned `runner-base` artifact.
 
-## Inherited content starts here
-<!-- Inherited content starts here -->
----
+## Tool interface
 
-## What this image is
-
-This image is intended to be used as a **tooling runtime**
-inside CI pipelines and automation workflows.
-
-It behaves like a **CLI binary**, not like
-a general-purpose interactive shell environment.
-
-The image is designed to be:
-
-* predictable
-* auditable
-* safe to automate
-* stable over long periods of time
-
----
-
-## Execution model
-
-All execution starts from a **single explicit entrypoint**: `runner`.
-
-Commands must be invoked intentionally.
-Implicit command forwarding is **not supported**.
-
-If a command is not explicitly supported,
-execution will fail with a non-zero exit code.  
-
-This execution model ensures:
-
-* deterministic behavior
-* clear audit trails
-* safe usage in CI environments
-* minimal surprise for operators
-
----
-
-## What this image provides
-
-This image provides:
-
-* a minimal and explicit runtime environment
-* a strict, single execution entrypoint
-* a **non-root execution model**
-
-The base image includes **no domain-specific plugins**.
-
-Additional capabilities may be provided
-by runner plugins in derived images.
-
----
-
-## What this image does NOT do
-
-This image explicitly does NOT:
-
-* guess user intent
-* implicitly execute system commands
-* provide unrestricted shell access
-* manage secrets or credentials
-* perform orchestration or deployment
-
-These responsibilities belong outside the image
-and must be handled by higher-level systems.
-
----
-
-## Runner interface (stable contract)
-
-The image exposes a **single command-line interface**:
+Canonical invocation:
 
 ```text
-<image> <command> [arguments]
+runner tool terraform [arguments...]
 ```
 
-### Core commands (available in all runner images)
+The `tf` name is a declared v0.3 compatibility alias:
 
-* `help`
-  Show available commands
+```text
+runner tool tf [arguments...]
+```
 
-* `about`
-  Show image identity
+The alias emits a deprecation warning and is not a canonical tool identity.
 
-* `info`
-  Display runtime and plugin information
+## Local validation
 
-* `exec`
-  Execute a system command explicitly
-
-* `shell`
-  Start an interactive shell (human use only)
-
-* `version`
-  Show available tool versions
-
-These commands form the **stable runner contract**
-and are guaranteed across all runner images.
-
----
-
-### Plugin commands
-
-Additional commands may be provided
-by image-specific runner plugins.
-
-Available plugins can be listed using:
+Run from Linux or WSL with Docker, Git, Bash, Make, and Python 3 available:
 
 ```bash
-docker run --rm <image> info
-docker run --rm runner-base info
+make check
 ```
 
-The base image ships with **no plugins** by design.
+`make check` performs shell and JSON validation, builds from the exact parent
+digest, checks out the exact conformance commit through tag `v0.3.0`, verifies
+the commit identity, runs Runner base conformance, and executes the Terraform
+domain contract.
 
----
-
-## Usage
-
-This image is intended to be used as a **base image**
-for other runner-based tooling images.
-
-Direct usage is intentionally limited to:
-
-* inspection
-* debugging
-* local experimentation
-
-Example:
+A shorter domain-only cycle is available:
 
 ```bash
-docker run --rm runner-base help
-docker run --rm runner-base about
-docker run --rm runner-base info
+make domain-test
 ```
 
----
+## Direct usage
 
-## Security & responsibility
+```bash
+make build
+docker run --rm runner-terraform:dev info --format json
+docker run --rm runner-terraform:dev tool terraform version
+```
 
-* The image runs as a **non-root user**
-* No secrets are embedded in the image
-* The image does not manage credentials
-* Correct usage and deployment remain
-  the responsibility of the user
+A working directory can be mounted at the inherited `/workspace` path:
 
----
+```bash
+docker run --rm \
+  --mount type=bind,src="$PWD",dst=/workspace \
+  runner-terraform:dev \
+  tool terraform validate
+```
 
-## Documentation
+Credentials, backend configuration, approvals, state policy, and deployment
+orchestration remain external responsibilities.
 
-* `CHANGELOG.md` — version history
-* `docs/ARCHITECTURE.md` — platform architecture
-* `docs/CONTRACT.md` — execution and CLI contract
-* `docs/TESTING.md` — test strategy and guarantees
+## Integrity model
 
----
+Runtime tool metadata is declared in `image.manifest`. Download source and
+SHA-256 evidence are recorded separately in
+`contracts/tools-lock/v001/tools.lock.json`. The build verifies the locked
+archive before installing Terraform.
+
+## Parent upgrade policy
+
+A new `runner-base` digest is adopted only through a dedicated pull request.
+That PR must update every recorded parent reference, rebuild from the new exact
+digest, and pass the commit-pinned base conformance plus the full Terraform
+domain contract. Floating tags and silent digest refreshes are not accepted.
 
 ## License
 
-This project is licensed under the **MIT License**.
-
-
----
-
-## AI Disclosure
-
-This project uses AI-assisted generation as part of its development process.
-
-AI is used strictly as a **productivity and consistency tool**, not as an
-autonomous author or decision-maker.
-
-All architectural decisions, execution contracts, validation logic,
-and final approvals are **designed, reviewed, and owned by humans**.
-
-AI-generated outputs are:
-- constrained by explicit specifications
-- reviewed before publication
-
-AI is **never granted credentials, secrets, or deployment access**.
-
-Responsibility for the project remains **fully human-owned**.
-
-
----
-
-### Final note
-
-`runner-base` intentionally prioritizes **clarity over convenience**.
-
-If a behavior is not explicit,
-it is considered unsupported.
-
+MIT. See `LICENSE`.
