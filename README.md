@@ -1,7 +1,7 @@
 # runner-terraform
 
 `runner-terraform` is the reference Terraform-derived image for the Runner
-platform. It adds Terraform, TFLint, and Trivy tooling to the immutable runtime
+platform. It adds Terraform, terraform-docs, and TFLint tooling to the immutable runtime
 and CLI contract owned by `runner-base`.
 
 ## Status
@@ -18,8 +18,8 @@ The candidate is bound to:
 - Runner contract: `v001`;
 - conformance bundle: `runner-base` commit `5803155a3fe9e737668cdc196bc768f46727ec50`;
 - Terraform: `1.16.4` for `linux/amd64`.
+- terraform-docs: `0.24.0` for `linux/amd64`.
 - TFLint: `0.64.0` for `linux/amd64`.
-- Trivy: `0.74.0` for `linux/amd64`.
 
 ## Derived-image boundary
 
@@ -40,8 +40,8 @@ Canonical invocation:
 
 ```text
 runner tool terraform [arguments...]
+runner tool terraform-docs [arguments...]
 runner tool tflint [arguments...]
-runner tool trivy [arguments...]
 ```
 
 ## Local validation
@@ -71,8 +71,8 @@ make domain-test
 make build
 docker run --rm runner-terraform:dev info --format json
 docker run --rm runner-terraform:dev tool terraform version
+docker run --rm runner-terraform:dev tool terraform-docs version
 docker run --rm runner-terraform:dev tool tflint --version
-docker run --rm runner-terraform:dev tool trivy --version
 ```
 
 A working directory can be mounted at the inherited `/workspace` path:
@@ -92,12 +92,11 @@ orchestration remain external responsibilities.
 Runtime tool metadata is declared in `image.manifest`. Download source and
 SHA-256 evidence are recorded separately in
 `contracts/tools-lock/v001/tools.lock.json`. The build verifies every locked
-archive before installing Terraform, TFLint, and Trivy.
+archive before installing Terraform, terraform-docs, and TFLint.
 
 TFLint uses only repository-local configuration unless its explicitly invoked
-plugin workflow downloads additional plugins. Trivy may download and cache its
-vulnerability database when a scan is requested; the runtime image does not
-embed that database.
+plugin workflow downloads additional plugins. CI uses a separately pinned Trivy
+container to scan the built image; Trivy is not a runtime tool in this image.
 
 ## Parent upgrade policy
 

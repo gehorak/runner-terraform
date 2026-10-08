@@ -13,8 +13,8 @@ python3 "${SCRIPT_DIR}/test-source-contract.py"
 EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0"
 EXPECTED_RUNNER_VERSION="runner 0.3.2 (contract v001)"
 EXPECTED_TERRAFORM_VERSION="1.16.4"
+EXPECTED_TERRAFORM_DOCS_VERSION="0.24.0"
 EXPECTED_TFLINT_VERSION="0.64.0"
-EXPECTED_TRIVY_VERSION="0.74.0"
 EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION:-0.1.0}"
 EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION:-local}"
 
@@ -33,14 +33,14 @@ runner_version="$(docker run --rm "${IMAGE}" --version)"
 [[ "${runner_version}" == "${EXPECTED_RUNNER_VERSION}" ]] || fail "unexpected Runner version output: ${runner_version}"
 
 info_json="$(docker run --rm "${IMAGE}" info --format json)"
-INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" EXPECTED_TFLINT_VERSION="${EXPECTED_TFLINT_VERSION}" EXPECTED_TRIVY_VERSION="${EXPECTED_TRIVY_VERSION}" EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION}" EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION}" python3 - <<'PY'
+INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" EXPECTED_TERRAFORM_DOCS_VERSION="${EXPECTED_TERRAFORM_DOCS_VERSION}" EXPECTED_TFLINT_VERSION="${EXPECTED_TFLINT_VERSION}" EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION}" EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION}" python3 - <<'PY'
 import json
 import os
 
 info = json.loads(os.environ["INFO_JSON"])
 expected_terraform = os.environ["EXPECTED_TERRAFORM_VERSION"]
+expected_terraform_docs = os.environ["EXPECTED_TERRAFORM_DOCS_VERSION"]
 expected_tflint = os.environ["EXPECTED_TFLINT_VERSION"]
-expected_trivy = os.environ["EXPECTED_TRIVY_VERSION"]
 expected_image_version = os.environ["EXPECTED_IMAGE_VERSION"]
 expected_image_revision = os.environ["EXPECTED_IMAGE_REVISION"]
 
@@ -72,13 +72,13 @@ assert info["tools"] == [
         "aliases": [],
     },
     {
-        "name": "tflint",
-        "version": expected_tflint,
+        "name": "terraform-docs",
+        "version": expected_terraform_docs,
         "aliases": [],
     },
     {
-        "name": "trivy",
-        "version": expected_trivy,
+        "name": "tflint",
+        "version": expected_tflint,
         "aliases": [],
     },
 ]
@@ -88,13 +88,14 @@ terraform_output="$(docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terr
 grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terraform_output}")" ||
   fail "canonical Terraform invocation reported an unexpected version"
 
+terraform_docs_output="$(docker run --rm "${IMAGE}" tool terraform-docs version)"
+terraform_docs_version="$(awk 'NR == 1 { for (field_number = 1; field_number <= NF; field_number++) if ($field_number ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) { sub(/^v/, "", $field_number); print $field_number; exit } }' <<<"${terraform_docs_output}")"
+[[ "${terraform_docs_version}" == "${EXPECTED_TERRAFORM_DOCS_VERSION}" ]] ||
+  fail "canonical terraform-docs invocation reported an unexpected version"
+
 tflint_output="$(docker run --rm "${IMAGE}" tool tflint --version)"
 grep -Fqx "TFLint version ${EXPECTED_TFLINT_VERSION}" <<<"$(head -n 1 <<<"${tflint_output}")" ||
   fail "canonical TFLint invocation reported an unexpected version"
-
-trivy_output="$(docker run --rm "${IMAGE}" tool trivy --version)"
-grep -Fqx "Version: ${EXPECTED_TRIVY_VERSION}" <<<"$(head -n 1 <<<"${trivy_output}")" ||
-  fail "canonical Trivy invocation reported an unexpected version"
 
 scratch="$(mktemp -d)"
 trap 'rm -rf "${scratch}"' EXIT

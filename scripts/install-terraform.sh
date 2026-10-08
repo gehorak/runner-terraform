@@ -49,7 +49,7 @@ read_lock_tool_names() {
 [[ -r "${LOCK_FILE}" ]] || fail "tools.lock is not readable: ${LOCK_FILE}"
 
 mapfile -t locked_tools < <(read_lock_tool_names)
-expected_tools=(terraform tflint trivy)
+expected_tools=(terraform terraform-docs tflint)
 [[ "${locked_tools[*]}" == "${expected_tools[*]}" ]] ||
   fail "tools.lock must declare exactly: ${expected_tools[*]}"
 
@@ -90,24 +90,24 @@ install_archive_binary() {
 }
 
 terraform_version="$(read_lock_tool_string terraform version)"
+terraform_docs_version="$(read_lock_tool_string terraform-docs version)"
 tflint_version="$(read_lock_tool_string tflint version)"
-trivy_version="$(read_lock_tool_string trivy version)"
 
 install_archive_binary terraform \
   "https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip" zip
+install_archive_binary terraform-docs \
+  "https://github.com/terraform-docs/terraform-docs/releases/download/v${terraform_docs_version}/terraform-docs-v${terraform_docs_version}-linux-amd64.tar.gz" tar.gz
 install_archive_binary tflint \
   "https://github.com/terraform-linters/tflint/releases/download/v${tflint_version}/tflint_linux_amd64.zip" zip
-install_archive_binary trivy \
-  "https://github.com/aquasecurity/trivy/releases/download/v${trivy_version}/trivy_${trivy_version}_Linux-64bit.tar.gz" tar.gz
 
 installed_terraform_version="$(CHECKPOINT_DISABLE=1 /usr/local/bin/terraform version | awk 'NR == 1 { sub(/^Terraform v/, ""); print }')"
 [[ "${installed_terraform_version}" == "${terraform_version}" ]] ||
   fail "installed Terraform version ${installed_terraform_version} does not match lock ${terraform_version}"
 
+installed_terraform_docs_version="$(/usr/local/bin/terraform-docs version | awk 'NR == 1 { for (field_number = 1; field_number <= NF; field_number++) if ($field_number ~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) { sub(/^v/, "", $field_number); print $field_number; exit } }')"
+[[ "${installed_terraform_docs_version}" == "${terraform_docs_version}" ]] ||
+  fail "installed terraform-docs version ${installed_terraform_docs_version} does not match lock ${terraform_docs_version}"
+
 installed_tflint_version="$(/usr/local/bin/tflint --version | awk 'NR == 1 { print $3 }')"
 [[ "${installed_tflint_version}" == "${tflint_version}" ]] ||
   fail "installed TFLint version ${installed_tflint_version} does not match lock ${tflint_version}"
-
-installed_trivy_version="$(/usr/local/bin/trivy --version | awk 'NR == 1 { print $2 }')"
-[[ "${installed_trivy_version}" == "${trivy_version}" ]] ||
-  fail "installed Trivy version ${installed_trivy_version} does not match lock ${trivy_version}"

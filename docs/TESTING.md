@@ -4,7 +4,7 @@
 
 Runner platform behavior is tested by the immutable conformance bundle supplied
 by `runner-base`. This repository does not copy or maintain the base test suite.
-It owns the Terraform, TFLint, and Trivy domain assertions in
+It owns the Terraform, terraform-docs, and TFLint domain assertions in
 `ci/test-domain.sh`.
 
 ## Pinned conformance inputs
@@ -87,12 +87,11 @@ The base bundle validates:
 
 - the OCI parent label equals the conformance parent reference;
 - Runner 0.3.2 and contract v001 are inherited unchanged;
-- image identity, runtime identity, and the Terraform, TFLint, and Trivy
+- image identity, runtime identity, and the Terraform, terraform-docs, and TFLint
   registry entries are exact;
 - `runner tool terraform` executes Terraform 1.16.4;
+- `runner tool terraform-docs` executes terraform-docs 0.24.0;
 - `runner tool tflint` executes TFLint 0.64.0 without downloading plugins;
-- `runner tool trivy` reports Trivy 0.74.0 without downloading its vulnerability
-  database;
 - source references remain consistent across the build, CI, local validation,
   domain test, and candidate documentation;
 - a Terraform child failure preserves exit code 1 through `runner tool`;
