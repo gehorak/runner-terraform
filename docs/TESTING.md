@@ -18,6 +18,29 @@ GitHub Actions invokes the reusable workflow from the exact conformance commit.
 Local `make conformance` checks out tag `v0.3.1`, verifies that it resolves to the
 same full commit, and runs the same conformance script.
 
+## Release verification
+
+The pull-request CI additionally validates the release-workflow contract and
+release-only helpers. It builds a separate candidate image and fails on fixable
+high or critical CVEs using the same digest-pinned Trivy scanner used by the
+release workflow.
+
+The tag workflow never publishes an untested image. For a strict `vMAJOR.MINOR.PATCH`
+tag that points exactly at `main`, it:
+
+- creates a build context whose image version and revision equal the tag and
+  tagged commit;
+- builds the candidate and reruns the pinned `runner-base` derived conformance,
+  including the Terraform domain contract;
+- scans that exact candidate, generates an SPDX SBOM, and then either publishes
+  the new immutable version tag or verifies that a recovery run has the same
+  image configuration digest;
+- creates provenance and SBOM attestations and publishes the SBOM plus a
+  machine-readable release-evidence asset.
+
+These release-specific controls are verified locally by `make check` without
+requiring a tag, registry credentials, or publication.
+
 ## Base conformance guarantees
 
 The base bundle validates:

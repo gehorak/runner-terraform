@@ -29,8 +29,11 @@ build:
 
 lint:
 	bash -n scripts/install-terraform.sh
+	bash -n ci/run-release-candidate-checks.sh
 	bash -n $(DOMAIN_TEST)
 	python3 ci/test-source-contract.py
+	python3 ci/test-release-workflow.py
+	python3 ci/test-release-support.py
 	python3 -m json.tool $(TOOLS_LOCK) >/dev/null
 
 domain-test: build

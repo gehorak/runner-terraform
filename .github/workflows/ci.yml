@@ -14,7 +14,27 @@ permissions:
   contents: read
   packages: read
 
+concurrency:
+  group: runner-terraform-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  release-contract:
+    name: Validate release workflow and evidence helpers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate release support contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash -n ci/run-release-candidate-checks.sh
+          python3 ci/test-release-workflow.py
+          python3 ci/test-release-support.py
+
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract
     uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@65e5386e56f6b986c47e746353da19a59f6136a1
@@ -27,3 +47,27 @@ jobs:
       conformance_ref: 65e5386e56f6b986c47e746353da19a59f6136a1
       tools_lock_path: contracts/tools-lock/v001/tools.lock.json
       domain_test_path: ci/test-domain.sh
+
+  image-security:
+    name: Scan candidate image for fixable high and critical CVEs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build image for vulnerability scan
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --platform linux/amd64 --tag runner-terraform-scan:${{ github.sha }} .
+          docker image save runner-terraform-scan:${{ github.sha }} --output runner-terraform-scan.tar
+
+      - name: Fail on fixable high or critical vulnerabilities
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --volume "${PWD}:/work:ro" \
+            aquasec/trivy@sha256:6fb0646988fcd2fdf7bf123f7174945ebc2c9c72d1fa1567c8d7daeeb70f8037 \
+            image --input /work/runner-terraform-scan.tar \
+            --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1

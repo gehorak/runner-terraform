@@ -1,9 +1,9 @@
 # Changelog
 
 All notable changes to `runner-terraform` are documented here. The project uses
-Semantic Versioning. No public `runner-terraform` release exists yet.
+Semantic Versioning.
 
-## [Unreleased] - runner-base v0.3.1 reference adoption
+## [0.3.1]
 
 ### Added
 
@@ -14,6 +14,9 @@ Semantic Versioning. No public `runner-terraform` release exists yet.
 - Offline Terraform initialization and validation fixture using `terraform_data`.
 - Source-contract consistency validation for the parent, conformance, contract,
   and Terraform version references.
+- Tag-gated release verification: tag binding, pinned derived conformance,
+  vulnerability scanning, SBOM generation, immutable publication recovery, and
+  provenance/SBOM attestations.
 
 ### Changed
 
@@ -27,8 +30,8 @@ Semantic Versioning. No public `runner-terraform` release exists yet.
 - Derived ownership of runtime user fields, entrypoint behavior, metadata
   parsing, base contract tests, and inherited base documentation.
 - The `tf` compatibility alias and redundant derived `WORKDIR /workspace`.
-- The pre-conformance release workflow; image publication remains deferred until
-  this reference candidate has passed review and conformance.
+- The pre-conformance release workflow that could publish without the derived
+  conformance and release-security gates.
 
 ## Versioning policy
 
