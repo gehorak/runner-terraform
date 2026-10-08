@@ -36,13 +36,13 @@ with tempfile.TemporaryDirectory() as directory:
         "--output",
         str(prepared),
         "--tag",
-        "v0.3.1",
+        "v0.3.2",
         "--revision",
         SHA,
     )
     assert result.returncode == 0, result.stderr
     assert prepared.read_text(encoding="utf-8") == (
-        "RUNNER_IMAGE_VERSION=0.3.1\nRUNNER_IMAGE_REVISION=" + SHA + "\n"
+        "RUNNER_IMAGE_VERSION=0.3.2\nRUNNER_IMAGE_REVISION=" + SHA + "\n"
     )
     invalid_tag = invoke(
         str(ROOT / "ci/prepare-release-manifest.py"),
@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory() as directory:
         "--output",
         str(prepared),
         "--tag",
-        "0.3.1",
+        "0.3.2",
         "--revision",
         SHA,
     )
@@ -86,11 +86,11 @@ with tempfile.TemporaryDirectory() as directory:
         "--output",
         str(evidence),
         "--tag",
-        "v0.3.1",
+        "v0.3.2",
         "--commit",
         SHA,
         "--image-reference",
-        "ghcr.io/gehorak/runner-terraform:0.3.1",
+        "ghcr.io/gehorak/runner-terraform:0.3.2",
         "--image-digest",
         DIGEST,
         "--parent-reference",
@@ -98,7 +98,7 @@ with tempfile.TemporaryDirectory() as directory:
         "--conformance-ref",
         SHA,
         "--sbom",
-        "runner-terraform-0.3.1.sbom.spdx.json",
+        "runner-terraform-0.3.2.sbom.spdx.json",
         "--provenance-attestation",
         "https://example.invalid/provenance",
         "--sbom-attestation",
@@ -106,9 +106,9 @@ with tempfile.TemporaryDirectory() as directory:
     )
     assert result.returncode == 0, result.stderr
     parsed = json.loads(evidence.read_text(encoding="utf-8"))
-    assert parsed["release"] == {"tag": "v0.3.1", "version": "0.3.1", "commit": SHA}
+    assert parsed["release"] == {"tag": "v0.3.2", "version": "0.3.2", "commit": SHA}
     assert parsed["image"] == {
-        "reference": "ghcr.io/gehorak/runner-terraform:0.3.1",
+        "reference": "ghcr.io/gehorak/runner-terraform:0.3.2",
         "digest": DIGEST,
     }
 

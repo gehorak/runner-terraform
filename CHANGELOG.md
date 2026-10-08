@@ -3,13 +3,14 @@
 All notable changes to `runner-terraform` are documented here. The project uses
 Semantic Versioning.
 
-## [0.3.1]
+## [0.3.2]
 
 ### Added
 
 - Immutable parent reference to released `runner-base` v0.3.2.
 - Derived overlay manifest using the base-owned metadata materializer.
-- Terraform 1.14.2 integrity evidence in `tools.lock` v001.
+- Terraform 1.16.4 integrity evidence in `tools.lock` v001.
+- Trivy 0.74.0 pinned for candidate and release vulnerability scans.
 - Commit-pinned Runner base conformance and explicit Terraform domain tests.
 - Offline Terraform initialization and validation fixture using `terraform_data`.
 - Source-contract consistency validation for the parent, conformance, contract,

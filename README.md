@@ -17,7 +17,7 @@ The candidate is bound to:
 - parent: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`;
 - Runner contract: `v001`;
 - conformance bundle: `runner-base` commit `5803155a3fe9e737668cdc196bc768f46727ec50`;
-- Terraform: `1.14.2` for `linux/amd64`.
+- Terraform: `1.16.4` for `linux/amd64`.
 
 ## Derived-image boundary
 

@@ -12,7 +12,7 @@ python3 "${SCRIPT_DIR}/test-source-contract.py"
 
 EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0"
 EXPECTED_RUNNER_VERSION="runner 0.3.2 (contract v001)"
-EXPECTED_TERRAFORM_VERSION="1.14.2"
+EXPECTED_TERRAFORM_VERSION="1.16.4"
 EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION:-0.1.0}"
 EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION:-local}"
 
@@ -95,7 +95,7 @@ grep -Fq "RUNNER_E_NOT_FOUND" "${scratch}/missing.err" \
 
 cat >"${scratch}/main.tf" <<'HCL'
 terraform {
-  required_version = "= 1.14.2"
+  required_version = "= 1.16.4"
 }
 
 resource "terraform_data" "reference" {

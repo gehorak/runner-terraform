@@ -23,7 +23,8 @@ same full commit, and runs the same conformance script.
 The pull-request CI additionally validates the release-workflow contract and
 release-only helpers. It builds a separate candidate image and fails on fixable
 high or critical CVEs using the same digest-pinned Trivy scanner used by the
-release workflow.
+release workflow: Trivy 0.74.0
+(`sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`).
 
 The tag workflow never publishes an untested image. For a strict `vMAJOR.MINOR.PATCH`
 tag that points exactly at `main`, it:
@@ -60,7 +61,7 @@ The base bundle validates:
 - the OCI parent label equals the conformance parent reference;
 - Runner 0.3.2 and contract v001 are inherited unchanged;
 - image identity, runtime identity, and the Terraform registry entry are exact;
-- `runner tool terraform` executes Terraform 1.14.2;
+- `runner tool terraform` executes Terraform 1.16.4;
 - source references remain consistent across the build, CI, local validation,
   domain test, and candidate documentation;
 - a Terraform child failure preserves exit code 1 through `runner tool`;
