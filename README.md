@@ -7,14 +7,14 @@ owned by `runner-base`.
 ## Status
 
 Reference candidate for the first repository-level adoption of the
-`runner-base` v0.3.0 derived-image contract. This repository has no published
+`runner-base` v0.3.1 derived-image contract. This repository has no published
 `runner-terraform` tag or release yet.
 
 The candidate is bound to:
 
-- parent: `ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003`;
+- parent: `ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0`;
 - Runner contract: `v001`;
-- conformance bundle: `runner-base` commit `4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f`;
+- conformance bundle: `runner-base` commit `65e5386e56f6b986c47e746353da19a59f6136a1`;
 - Terraform: `1.14.2` for `linux/amd64`.
 
 ## Derived-image boundary
@@ -47,7 +47,7 @@ make check
 ```
 
 `make check` performs shell and JSON validation, builds from the exact parent
-digest, checks out the exact conformance commit through tag `v0.3.0`, verifies
+digest, checks out the exact conformance commit through tag `v0.3.1`, verifies
 the commit identity, runs Runner base conformance, and executes the Terraform
 domain contract.
 

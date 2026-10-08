@@ -10,8 +10,8 @@ RUNNER_CONFORMANCE_VERSION="${RUNNER_CONFORMANCE_VERSION:?RUNNER_CONFORMANCE_VER
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python3 "${SCRIPT_DIR}/test-source-contract.py"
 
-EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003"
-EXPECTED_RUNNER_VERSION="runner 0.3.0 (contract v001)"
+EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0"
+EXPECTED_RUNNER_VERSION="runner 0.3.1 (contract v001)"
 EXPECTED_TERRAFORM_VERSION="1.14.2"
 
 fail() {
@@ -39,7 +39,7 @@ expected_terraform = os.environ["EXPECTED_TERRAFORM_VERSION"]
 assert info["schema_version"] == 1
 assert info["runner"] == {
     "name": "runner",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "contract_version": "v001",
 }
 assert info["image"] == {
