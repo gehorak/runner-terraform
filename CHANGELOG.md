@@ -7,7 +7,7 @@ Semantic Versioning.
 
 ### Added
 
-- Immutable parent reference to released `runner-base` v0.3.1.
+- Immutable parent reference to released `runner-base` v0.3.2.
 - Derived overlay manifest using the base-owned metadata materializer.
 - Terraform 1.14.2 integrity evidence in `tools.lock` v001.
 - Commit-pinned Runner base conformance and explicit Terraform domain tests.

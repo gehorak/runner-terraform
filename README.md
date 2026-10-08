@@ -7,16 +7,16 @@ owned by `runner-base`.
 ## Status
 
 Reference candidate for the first repository-level adoption of the
-`runner-base` v0.3.1 derived-image contract. Published status is determined by
+`runner-base` v0.3.2 derived-image contract. Published status is determined by
 an immutable version tag, its GHCR image, and release evidence; a branch commit
 or CI success alone is not a release. The release contract is documented in
 [docs/RELEASING.md](docs/RELEASING.md).
 
 The candidate is bound to:
 
-- parent: `ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0`;
+- parent: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`;
 - Runner contract: `v001`;
-- conformance bundle: `runner-base` commit `65e5386e56f6b986c47e746353da19a59f6136a1`;
+- conformance bundle: `runner-base` commit `5803155a3fe9e737668cdc196bc768f46727ec50`;
 - Terraform: `1.14.2` for `linux/amd64`.
 
 ## Derived-image boundary
@@ -49,7 +49,7 @@ make check
 ```
 
 `make check` performs shell and JSON validation, builds from the exact parent
-digest, checks out the exact conformance commit through tag `v0.3.1`, verifies
+digest, checks out the exact conformance commit through tag `v0.3.2`, verifies
 the commit identity, runs Runner base conformance, and executes the Terraform
 domain contract. It also validates the release workflow, tag-bound manifest
 preparation, immutable-publication recovery, and release-evidence writer.

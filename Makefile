@@ -2,10 +2,10 @@ IMAGE_NAME ?= runner-terraform
 IMAGE_TAG ?= dev
 IMAGE := $(IMAGE_NAME):$(IMAGE_TAG)
 
-BASE_IMAGE := ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0
+BASE_IMAGE := ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
 RUNNER_CONFORMANCE_VERSION := v001
-RUNNER_CONFORMANCE_REF := 65e5386e56f6b986c47e746353da19a59f6136a1
-RUNNER_BASE_TAG := v0.3.1
+RUNNER_CONFORMANCE_REF := 5803155a3fe9e737668cdc196bc768f46727ec50
+RUNNER_BASE_TAG := v0.3.2
 CONFORMANCE_DIR := .cache/runner-base-conformance
 TOOLS_LOCK := contracts/tools-lock/v001/tools.lock.json
 DOMAIN_TEST := ci/test-domain.sh

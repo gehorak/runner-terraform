@@ -1,4 +1,4 @@
-# runner-terraform derived-image overlay for runner-base v0.3.1.
+# runner-terraform derived-image overlay for runner-base v0.3.2.
 #
 # This file intentionally contains only derived image identity and declarative
 # tool registry fields. Runner version, contract version, platform, runtime user,

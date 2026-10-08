@@ -8,14 +8,14 @@ It owns only the Terraform domain assertions in `ci/test-domain.sh`.
 
 ## Pinned conformance inputs
 
-- Base image: `ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0`
+- Base image: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`
 - Contract: `v001`
-- Conformance commit: `65e5386e56f6b986c47e746353da19a59f6136a1`
+- Conformance commit: `5803155a3fe9e737668cdc196bc768f46727ec50`
 - Tools lock: `contracts/tools-lock/v001/tools.lock.json`
 - Domain test: `ci/test-domain.sh`
 
 GitHub Actions invokes the reusable workflow from the exact conformance commit.
-Local `make conformance` checks out tag `v0.3.1`, verifies that it resolves to the
+Local `make conformance` checks out tag `v0.3.2`, verifies that it resolves to the
 same full commit, and runs the same conformance script.
 
 ## Release verification
@@ -58,7 +58,7 @@ The base bundle validates:
 `ci/test-domain.sh` validates:
 
 - the OCI parent label equals the conformance parent reference;
-- Runner 0.3.1 and contract v001 are inherited unchanged;
+- Runner 0.3.2 and contract v001 are inherited unchanged;
 - image identity, runtime identity, and the Terraform registry entry are exact;
 - `runner tool terraform` executes Terraform 1.14.2;
 - source references remain consistent across the build, CI, local validation,

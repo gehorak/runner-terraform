@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SHA = "0123456789abcdef0123456789abcdef01234567"
 DIGEST = "sha256:" + "a" * 64
-PARENT = "ghcr.io/gehorak/runner-base:0.3.1@sha256:e4c9cbe6c4faf07984beaa2a6bb857e575dc84676a6e2e76b875e8cb83d615e0"
+PARENT = "ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0"
 
 
 def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
