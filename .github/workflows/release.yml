@@ -92,7 +92,7 @@ jobs:
             type=raw,value=latest
           labels: |
             org.opencontainers.image.title=runner-terraform
-            org.opencontainers.image.description=Deterministic Terraform runner derived from runner-base
+            org.opencontainers.image.description=Deterministic Terraform tooling runner derived from runner-base
             org.opencontainers.image.source=https://github.com/gehorak/runner-terraform
             org.opencontainers.image.version=${{ steps.semver.outputs.version }}
             org.opencontainers.image.revision=${{ steps.semver.outputs.commit }}

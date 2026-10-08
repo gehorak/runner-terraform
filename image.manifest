@@ -10,11 +10,15 @@ RUNNER_ROLE=terraform
 RUNNER_IMAGE_VERSION=0.1.0
 RUNNER_IMAGE_REVISION=local
 
-RUNNER_DESCRIPTION=Deterministic Terraform runner derived from runner-base
+RUNNER_DESCRIPTION=Deterministic Terraform tooling runner derived from runner-base
 RUNNER_VENDOR=gehorak
 RUNNER_LICENSE=MIT
 RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
 
-RUNNER_TOOL_NAMES=terraform
+RUNNER_TOOL_NAMES=terraform,tflint,trivy
 RUNNER_TOOL_TERRAFORM_VERSION=1.16.4
 RUNNER_TOOL_TERRAFORM_EXECUTABLE=/usr/local/bin/terraform
+RUNNER_TOOL_TFLINT_VERSION=0.64.0
+RUNNER_TOOL_TFLINT_EXECUTABLE=/usr/local/bin/tflint
+RUNNER_TOOL_TRIVY_VERSION=0.74.0
+RUNNER_TOOL_TRIVY_EXECUTABLE=/usr/local/bin/trivy

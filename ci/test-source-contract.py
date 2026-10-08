@@ -50,11 +50,12 @@ def main() -> int:
 
     tools_lock = json.loads(read("contracts/tools-lock/v001/tools.lock.json"))
     tools = tools_lock.get("tools")
-    if not isinstance(tools, list) or len(tools) != 1 or tools[0].get("name") != "terraform":
-        raise ValueError("tools.lock must declare exactly one Terraform tool")
-    terraform_version = tools[0].get("version")
-    if not isinstance(terraform_version, str):
-        raise ValueError("tools.lock Terraform version must be a string")
+    expected_tools = ["terraform", "tflint", "trivy"]
+    if not isinstance(tools, list) or [tool.get("name") for tool in tools] != expected_tools:
+        raise ValueError("tools.lock must declare Terraform, TFLint, and Trivy in lexical order")
+    tool_versions = {tool["name"]: tool.get("version") for tool in tools}
+    if not all(isinstance(version, str) for version in tool_versions.values()):
+        raise ValueError("tools.lock tool versions must be strings")
 
     require_contains(
         [".github/workflows/ci.yml", "Makefile", "ci/test-domain.sh", "README.md", "docs/TESTING.md"],
@@ -71,11 +72,12 @@ def main() -> int:
         contract_version,
         "contract version",
     )
-    require_contains(
-        ["image.manifest", "ci/test-domain.sh", "README.md", "docs/TESTING.md"],
-        terraform_version,
-        "Terraform version",
-    )
+    for tool_name, tool_version in tool_versions.items():
+        require_contains(
+            ["image.manifest", "ci/test-domain.sh", "README.md", "docs/TESTING.md"],
+            tool_version,
+            f"{tool_name} version",
+        )
 
     for value, label in (
         (base_reference, "base reference"),
