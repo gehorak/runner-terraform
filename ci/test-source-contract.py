@@ -50,9 +50,9 @@ def main() -> int:
 
     tools_lock = json.loads(read("contracts/tools-lock/v001/tools.lock.json"))
     tools = tools_lock.get("tools")
-    expected_tools = ["terraform", "terraform-docs", "tflint"]
+    expected_tools = ["terraform", "terraform-docs", "tflint", "trivy"]
     if not isinstance(tools, list) or [tool.get("name") for tool in tools] != expected_tools:
-        raise ValueError("tools.lock must declare Terraform, terraform-docs, and TFLint in lexical order")
+        raise ValueError("tools.lock must declare Terraform, terraform-docs, TFLint, and Trivy in lexical order")
     tool_versions = {tool["name"]: tool.get("version") for tool in tools}
     if not all(isinstance(version, str) for version in tool_versions.values()):
         raise ValueError("tools.lock tool versions must be strings")

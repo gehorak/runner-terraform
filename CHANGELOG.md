@@ -9,8 +9,8 @@ Semantic Versioning.
 
 - Non-publishing CI candidate-image build with reusable parent and inherited
   Runner contract checks.
-- terraform-docs 0.24.0 and TFLint 0.64.0 as integrity-pinned runtime tools
-  alongside Terraform.
+- terraform-docs 0.24.0, TFLint 0.64.0, and Trivy 0.74.0 as integrity-pinned
+  runtime tools alongside Terraform.
 
 ## [0.3.2]
 

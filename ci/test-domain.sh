@@ -15,6 +15,7 @@ EXPECTED_RUNNER_VERSION="runner 0.3.2 (contract v001)"
 EXPECTED_TERRAFORM_VERSION="1.16.4"
 EXPECTED_TERRAFORM_DOCS_VERSION="0.24.0"
 EXPECTED_TFLINT_VERSION="0.64.0"
+EXPECTED_TRIVY_VERSION="0.74.0"
 EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION:-0.1.0}"
 EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION:-local}"
 
@@ -33,7 +34,7 @@ runner_version="$(docker run --rm "${IMAGE}" --version)"
 [[ "${runner_version}" == "${EXPECTED_RUNNER_VERSION}" ]] || fail "unexpected Runner version output: ${runner_version}"
 
 info_json="$(docker run --rm "${IMAGE}" info --format json)"
-INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" EXPECTED_TERRAFORM_DOCS_VERSION="${EXPECTED_TERRAFORM_DOCS_VERSION}" EXPECTED_TFLINT_VERSION="${EXPECTED_TFLINT_VERSION}" EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION}" EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION}" python3 - <<'PY'
+INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" EXPECTED_TERRAFORM_DOCS_VERSION="${EXPECTED_TERRAFORM_DOCS_VERSION}" EXPECTED_TFLINT_VERSION="${EXPECTED_TFLINT_VERSION}" EXPECTED_TRIVY_VERSION="${EXPECTED_TRIVY_VERSION}" EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION}" EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION}" python3 - <<'PY'
 import json
 import os
 
@@ -41,6 +42,7 @@ info = json.loads(os.environ["INFO_JSON"])
 expected_terraform = os.environ["EXPECTED_TERRAFORM_VERSION"]
 expected_terraform_docs = os.environ["EXPECTED_TERRAFORM_DOCS_VERSION"]
 expected_tflint = os.environ["EXPECTED_TFLINT_VERSION"]
+expected_trivy = os.environ["EXPECTED_TRIVY_VERSION"]
 expected_image_version = os.environ["EXPECTED_IMAGE_VERSION"]
 expected_image_revision = os.environ["EXPECTED_IMAGE_REVISION"]
 
@@ -81,6 +83,11 @@ assert info["tools"] == [
         "version": expected_tflint,
         "aliases": [],
     },
+    {
+        "name": "trivy",
+        "version": expected_trivy,
+        "aliases": [],
+    },
 ]
 PY
 
@@ -96,6 +103,10 @@ terraform_docs_version="$(awk 'NR == 1 { for (field_number = 1; field_number <= 
 tflint_output="$(docker run --rm "${IMAGE}" tool tflint --version)"
 grep -Fqx "TFLint version ${EXPECTED_TFLINT_VERSION}" <<<"$(head -n 1 <<<"${tflint_output}")" ||
   fail "canonical TFLint invocation reported an unexpected version"
+
+trivy_output="$(docker run --rm "${IMAGE}" tool trivy --version)"
+grep -Fqx "Version: ${EXPECTED_TRIVY_VERSION}" <<<"$(head -n 1 <<<"${trivy_output}")" ||
+  fail "canonical Trivy invocation reported an unexpected version"
 
 scratch="$(mktemp -d)"
 trap 'rm -rf "${scratch}"' EXIT

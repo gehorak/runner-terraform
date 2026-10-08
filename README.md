@@ -1,7 +1,7 @@
 # runner-terraform
 
 `runner-terraform` is the reference Terraform-derived image for the Runner
-platform. It adds Terraform, terraform-docs, and TFLint tooling to the immutable runtime
+platform. It adds Terraform, terraform-docs, TFLint, and Trivy tooling to the immutable runtime
 and CLI contract owned by `runner-base`.
 
 ## Status
@@ -20,6 +20,7 @@ The candidate is bound to:
 - Terraform: `1.16.4` for `linux/amd64`.
 - terraform-docs: `0.24.0` for `linux/amd64`.
 - TFLint: `0.64.0` for `linux/amd64`.
+- Trivy: `0.74.0` for `linux/amd64`.
 
 ## Derived-image boundary
 
@@ -42,6 +43,7 @@ Canonical invocation:
 runner tool terraform [arguments...]
 runner tool terraform-docs [arguments...]
 runner tool tflint [arguments...]
+runner tool trivy [arguments...]
 ```
 
 ## Local validation
@@ -73,6 +75,7 @@ docker run --rm runner-terraform:dev info --format json
 docker run --rm runner-terraform:dev tool terraform version
 docker run --rm runner-terraform:dev tool terraform-docs version
 docker run --rm runner-terraform:dev tool tflint --version
+docker run --rm runner-terraform:dev tool trivy --version
 ```
 
 A working directory can be mounted at the inherited `/workspace` path:
@@ -95,8 +98,10 @@ SHA-256 evidence are recorded separately in
 archive before installing Terraform, terraform-docs, and TFLint.
 
 TFLint uses only repository-local configuration unless its explicitly invoked
-plugin workflow downloads additional plugins. CI uses a separately pinned Trivy
-container to scan the built image; Trivy is not a runtime tool in this image.
+plugin workflow downloads additional plugins. Trivy enables local Terraform HCL
+scans where an external scanner is unavailable; it may download and cache its
+vulnerability database when a scan is requested. CI also uses a separately
+pinned Trivy container to scan the built image.
 
 ## Parent upgrade policy
 
