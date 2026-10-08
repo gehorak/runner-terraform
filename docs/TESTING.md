@@ -26,6 +26,12 @@ high or critical CVEs using the same digest-pinned Trivy scanner used by the
 release workflow: Trivy 0.74.0
 (`sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`).
 
+The derived shell surface is checked with Bash syntax validation, a
+SHA-256-verified `shfmt` 3.13.1 binary, and ShellCheck. A repository-owned
+Dockerfile structure test rejects a floating parent, `ADD`, runtime identity
+build arguments, and any override of parent-owned `ENTRYPOINT`, `CMD`, or
+`WORKDIR`.
+
 The tag workflow never publishes an untested image. For a strict `vMAJOR.MINOR.PATCH`
 tag that points exactly at `main`, it:
 
@@ -41,6 +47,11 @@ tag that points exactly at `main`, it:
 
 These release-specific controls are verified locally by `make check` without
 requiring a tag, registry credentials, or publication.
+
+After the first release, a scheduled workflow resolves the latest GitHub
+Release to its immutable digest, scans it with the same Trivy policy, and
+uploads SARIF under `trivy-published-image` in GitHub Security. Before the
+first release, the scheduled scan has no target and exits without a report.
 
 ## Base conformance guarantees
 

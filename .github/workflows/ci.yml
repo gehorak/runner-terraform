@@ -19,6 +19,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint derived shell surface
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned shfmt
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          shfmt_path="${RUNNER_TEMP}/shfmt.download"
+          curl --fail --location --silent --show-error \
+            --output "${shfmt_path}" \
+            https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64
+          echo "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1  ${shfmt_path}" | sha256sum --check --status
+          install -m 0755 "${shfmt_path}" "${RUNNER_TEMP}/shfmt"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Run Bash syntax and shfmt checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash ci/lint-shell.sh
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+        with:
+          scandir: .
+          severity: warning
+          check_together: true
+          version: v0.11.0
+
   release-contract:
     name: Validate release workflow and evidence helpers
     runs-on: ubuntu-latest
@@ -31,9 +65,11 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          bash -n ci/run-release-candidate-checks.sh
+          python3 ci/test-dockerfile-structure.py
+          python3 ci/test-ci-quality.py
           python3 ci/test-release-workflow.py
           python3 ci/test-release-support.py
+          python3 ci/test-published-security-scan.py
 
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract

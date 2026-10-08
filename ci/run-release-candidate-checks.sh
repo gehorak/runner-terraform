@@ -21,9 +21,9 @@ git clone --depth 1 --branch "${CONFORMANCE_TAG}" \
 test "$(git -C "${conformance_dir}" rev-parse HEAD)" = "${CONFORMANCE_REF}"
 
 IMAGE="${IMAGE}" \
-BASE_REFERENCE="${BASE_REFERENCE}" \
-RUNNER_CONFORMANCE_VERSION="${CONTRACT_VERSION}" \
-bash "${conformance_dir}/ci/derived-conformance.sh" \
+  BASE_REFERENCE="${BASE_REFERENCE}" \
+  RUNNER_CONFORMANCE_VERSION="${CONTRACT_VERSION}" \
+  bash "${conformance_dir}/ci/derived-conformance.sh" \
   --image "${IMAGE}" \
   --base-reference "${BASE_REFERENCE}" \
   --contract-version "${CONTRACT_VERSION}" \

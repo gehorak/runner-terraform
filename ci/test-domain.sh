@@ -71,8 +71,8 @@ assert info["tools"] == [
 PY
 
 terraform_output="$(docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terraform version)"
-grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terraform_output}")" \
-  || fail "canonical Terraform invocation reported an unexpected version"
+grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terraform_output}")" ||
+  fail "canonical Terraform invocation reported an unexpected version"
 
 scratch="$(mktemp -d)"
 trap 'rm -rf "${scratch}"' EXIT
@@ -82,16 +82,16 @@ docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terraform version -inval
   >"${scratch}/terraform-child-failure.out" 2>"${scratch}/terraform-child-failure.err"
 terraform_child_status=$?
 set -e
-[[ ${terraform_child_status} -eq 1 ]] \
-  || fail "Terraform child failure returned ${terraform_child_status}, expected 1"
+[[ ${terraform_child_status} -eq 1 ]] ||
+  fail "Terraform child failure returned ${terraform_child_status}, expected 1"
 
 set +e
 docker run --rm "${IMAGE}" tool missing-tool >"${scratch}/missing.out" 2>"${scratch}/missing.err"
 missing_status=$?
 set -e
 [[ ${missing_status} -eq 4 ]] || fail "unknown tool returned ${missing_status}, expected 4"
-grep -Fq "RUNNER_E_NOT_FOUND" "${scratch}/missing.err" \
-  || fail "unknown tool did not emit RUNNER_E_NOT_FOUND"
+grep -Fq "RUNNER_E_NOT_FOUND" "${scratch}/missing.err" ||
+  fail "unknown tool did not emit RUNNER_E_NOT_FOUND"
 
 cat >"${scratch}/main.tf" <<'HCL'
 terraform {

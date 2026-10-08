@@ -22,6 +22,7 @@ required = (
     "ci/prepare-release-manifest.py",
     "ci/run-release-candidate-checks.sh",
     "aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969",
+    "docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc",
     "anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26",
     "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
     "ci/release-publication-state.py",

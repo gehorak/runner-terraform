@@ -42,7 +42,8 @@ runner tool terraform [arguments...]
 
 ## Local validation
 
-Run from Linux or WSL with Docker, Git, Bash, Make, and Python 3 available:
+Run from Linux or WSL with Docker, Git, Bash, Make, Python 3, and `shfmt`
+available. CI also runs ShellCheck over the derived shell surface.
 
 ```bash
 make check
@@ -102,6 +103,12 @@ runs the pinned derived conformance, rejects fixable high and critical CVEs,
 generates an SPDX SBOM, publishes an immutable GHCR version tag, creates
 provenance and SBOM attestations, and attaches the SBOM plus release evidence
 to the GitHub release. See [docs/RELEASING.md](docs/RELEASING.md).
+
+## Security
+
+The derived-image security boundary, CVE policy, published-image monitoring,
+and private reporting guidance are in [SECURITY.md](SECURITY.md) and
+[docs/SECURITY.md](docs/SECURITY.md).
 
 ## License
 

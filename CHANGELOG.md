@@ -11,6 +11,9 @@ Semantic Versioning.
 - Derived overlay manifest using the base-owned metadata materializer.
 - Terraform 1.16.4 integrity evidence in `tools.lock` v001.
 - Trivy 0.74.0 pinned for candidate and release vulnerability scans.
+- Scheduled scan of the latest published immutable digest with SARIF reporting.
+- Dependabot coverage for the Dockerfile parent reference and GitHub Actions.
+- Release build action pin aligned with the reviewed `runner-base` v0.3.2 pin.
 - Commit-pinned Runner base conformance and explicit Terraform domain tests.
 - Offline Terraform initialization and validation fixture using `terraform_data`.
 - Source-contract consistency validation for the parent, conformance, contract,
