@@ -20,7 +20,8 @@ git clone --depth 1 --branch "${CONFORMANCE_TAG}" \
   https://github.com/gehorak/runner-base.git "${conformance_dir}"
 test "$(git -C "${conformance_dir}" rev-parse HEAD)" = "${CONFORMANCE_REF}"
 
-IMAGE="${IMAGE}" \
+env \
+  IMAGE="${IMAGE}" \
   BASE_REFERENCE="${BASE_REFERENCE}" \
   RUNNER_CONFORMANCE_VERSION="${CONTRACT_VERSION}" \
   bash "${conformance_dir}/ci/derived-conformance.sh" \
