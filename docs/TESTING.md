@@ -20,6 +20,21 @@ same full commit, and runs the same conformance script.
 
 ## Release verification
 
+### Non-publishing candidate build
+
+`Build and validate derived image` is a deliberately portable CI template for
+runner-derived images. Its job-level inputs declare the candidate tag, immutable
+parent reference, Runner version, and contract version. The visible steps are:
+
+- build the local linux/amd64 candidate image;
+- compare its OCI parent label to the immutable parent reference;
+- verify the inherited Runner version and contract; and
+- invoke the repository-owned domain contract as the derivation extension hook.
+
+The job never pushes an image and never creates a release. A new derivative can
+copy the job, replace its declared inputs and domain-test path, and retain the
+same parent and inherited-contract checks.
+
 The pull-request CI additionally validates the release-workflow contract and
 release-only helpers. It builds a separate candidate image and fails on fixable
 high or critical CVEs using the same digest-pinned Trivy scanner used by the

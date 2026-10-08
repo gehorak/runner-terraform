@@ -3,6 +3,13 @@
 All notable changes to `runner-terraform` are documented here. The project uses
 Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- Non-publishing CI candidate-image build with reusable parent and inherited
+  Runner contract checks.
+
 ## [0.3.2]
 
 ### Added
