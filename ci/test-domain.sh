@@ -10,9 +10,11 @@ RUNNER_CONFORMANCE_VERSION="${RUNNER_CONFORMANCE_VERSION:?RUNNER_CONFORMANCE_VER
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 python3 "${SCRIPT_DIR}/test-source-contract.py"
 
-EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003"
-EXPECTED_RUNNER_VERSION="runner 0.3.0 (contract v001)"
-EXPECTED_TERRAFORM_VERSION="1.14.2"
+EXPECTED_BASE_REFERENCE="ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0"
+EXPECTED_RUNNER_VERSION="runner 0.3.2 (contract v001)"
+EXPECTED_TERRAFORM_VERSION="1.16.4"
+EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION:-0.1.0}"
+EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION:-local}"
 
 fail() {
   echo "ERROR: $*" >&2
@@ -29,25 +31,27 @@ runner_version="$(docker run --rm "${IMAGE}" --version)"
 [[ "${runner_version}" == "${EXPECTED_RUNNER_VERSION}" ]] || fail "unexpected Runner version output: ${runner_version}"
 
 info_json="$(docker run --rm "${IMAGE}" info --format json)"
-INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" python3 - <<'PY'
+INFO_JSON="${info_json}" EXPECTED_TERRAFORM_VERSION="${EXPECTED_TERRAFORM_VERSION}" EXPECTED_IMAGE_VERSION="${EXPECTED_IMAGE_VERSION}" EXPECTED_IMAGE_REVISION="${EXPECTED_IMAGE_REVISION}" python3 - <<'PY'
 import json
 import os
 
 info = json.loads(os.environ["INFO_JSON"])
 expected_terraform = os.environ["EXPECTED_TERRAFORM_VERSION"]
+expected_image_version = os.environ["EXPECTED_IMAGE_VERSION"]
+expected_image_revision = os.environ["EXPECTED_IMAGE_REVISION"]
 
 assert info["schema_version"] == 1
 assert info["runner"] == {
     "name": "runner",
-    "version": "0.3.0",
+    "version": "0.3.2",
     "contract_version": "v001",
 }
 assert info["image"] == {
     "name": "runner-terraform",
-    "version": "0.1.0",
+    "version": expected_image_version,
     "domain": "terraform",
     "role": "terraform",
-    "revision": "local",
+    "revision": expected_image_revision,
 }
 assert info["runtime"] == {
     "platform": "linux",
@@ -67,8 +71,8 @@ assert info["tools"] == [
 PY
 
 terraform_output="$(docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terraform version)"
-grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terraform_output}")" \
-  || fail "canonical Terraform invocation reported an unexpected version"
+grep -Fqx "Terraform v${EXPECTED_TERRAFORM_VERSION}" <<<"$(head -n 1 <<<"${terraform_output}")" ||
+  fail "canonical Terraform invocation reported an unexpected version"
 
 scratch="$(mktemp -d)"
 trap 'rm -rf "${scratch}"' EXIT
@@ -78,20 +82,20 @@ docker run --rm -e CHECKPOINT_DISABLE=1 "${IMAGE}" tool terraform version -inval
   >"${scratch}/terraform-child-failure.out" 2>"${scratch}/terraform-child-failure.err"
 terraform_child_status=$?
 set -e
-[[ ${terraform_child_status} -eq 1 ]] \
-  || fail "Terraform child failure returned ${terraform_child_status}, expected 1"
+[[ ${terraform_child_status} -eq 1 ]] ||
+  fail "Terraform child failure returned ${terraform_child_status}, expected 1"
 
 set +e
 docker run --rm "${IMAGE}" tool missing-tool >"${scratch}/missing.out" 2>"${scratch}/missing.err"
 missing_status=$?
 set -e
 [[ ${missing_status} -eq 4 ]] || fail "unknown tool returned ${missing_status}, expected 4"
-grep -Fq "RUNNER_E_NOT_FOUND" "${scratch}/missing.err" \
-  || fail "unknown tool did not emit RUNNER_E_NOT_FOUND"
+grep -Fq "RUNNER_E_NOT_FOUND" "${scratch}/missing.err" ||
+  fail "unknown tool did not emit RUNNER_E_NOT_FOUND"
 
 cat >"${scratch}/main.tf" <<'HCL'
 terraform {
-  required_version = "= 1.14.2"
+  required_version = "= 1.16.4"
 }
 
 resource "terraform_data" "reference" {

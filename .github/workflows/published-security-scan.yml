@@ -1,0 +1,73 @@
+name: Scan latest published release
+
+on:
+  release:
+    types:
+      - published
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  security-events: write
+
+jobs:
+  scan:
+    name: Scan immutable published digest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source for report locations
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve the latest released immutable SemVer digest
+        id: target
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          if ! tag="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2>/dev/null)"; then
+            if [[ "${GITHUB_EVENT_NAME}" == "schedule" ]]; then
+              echo "No published release exists; published-image scan is not applicable yet." >> "${GITHUB_STEP_SUMMARY}"
+              echo "skip=true" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            echo "ERROR: latest GitHub Release could not be resolved" >&2
+            exit 1
+          fi
+          [[ "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "ERROR: latest GitHub Release tag is not strict SemVer: ${tag}" >&2
+            exit 1
+          }
+          reference="ghcr.io/gehorak/runner-terraform:${tag#v}"
+          digest="sha256:$(docker buildx imagetools inspect --raw "${reference}" | sha256sum | cut -d ' ' -f 1)"
+          printf 'reference=%s\ndigest=%s\n' "${reference}" "${digest}" > scan-target.txt
+          cat scan-target.txt >> "${GITHUB_STEP_SUMMARY}"
+          {
+            echo "reference=${reference}"
+            echo "digest=${digest}"
+            echo "skip=false"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Scan the exact published digest
+        if: ${{ steps.target.outputs.skip != 'true' }}
+        shell: bash
+        env:
+          REFERENCE: ${{ steps.target.outputs.reference }}
+          DIGEST: ${{ steps.target.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --volume "${PWD}:/work" \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            image "${REFERENCE}@${DIGEST}" --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 \
+            --format sarif --output /work/trivy.sarif
+
+      - name: Publish vulnerability report to GitHub Security
+        if: ${{ !cancelled() && hashFiles('trivy.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-published-image

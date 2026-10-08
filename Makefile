@@ -2,10 +2,10 @@ IMAGE_NAME ?= runner-terraform
 IMAGE_TAG ?= dev
 IMAGE := $(IMAGE_NAME):$(IMAGE_TAG)
 
-BASE_IMAGE := ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
+BASE_IMAGE := ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
 RUNNER_CONFORMANCE_VERSION := v001
-RUNNER_CONFORMANCE_REF := 4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f
-RUNNER_BASE_TAG := v0.3.0
+RUNNER_CONFORMANCE_REF := 5803155a3fe9e737668cdc196bc768f46727ec50
+RUNNER_BASE_TAG := v0.3.2
 CONFORMANCE_DIR := .cache/runner-base-conformance
 TOOLS_LOCK := contracts/tools-lock/v001/tools.lock.json
 DOMAIN_TEST := ci/test-domain.sh
@@ -28,9 +28,13 @@ build:
 	  .
 
 lint:
-	bash -n scripts/install-terraform.sh
-	bash -n $(DOMAIN_TEST)
+	bash ci/lint-shell.sh
+	python3 ci/test-dockerfile-structure.py
+	python3 ci/test-ci-quality.py
 	python3 ci/test-source-contract.py
+	python3 ci/test-release-workflow.py
+	python3 ci/test-release-support.py
+	python3 ci/test-published-security-scan.py
 	python3 -m json.tool $(TOOLS_LOCK) >/dev/null
 
 domain-test: build

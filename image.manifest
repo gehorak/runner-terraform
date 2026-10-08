@@ -1,4 +1,4 @@
-# runner-terraform derived-image overlay for runner-base v0.3.0.
+# runner-terraform derived-image overlay for runner-base v0.3.2.
 #
 # This file intentionally contains only derived image identity and declarative
 # tool registry fields. Runner version, contract version, platform, runtime user,
@@ -16,5 +16,5 @@ RUNNER_LICENSE=MIT
 RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
 
 RUNNER_TOOL_NAMES=terraform
-RUNNER_TOOL_TERRAFORM_VERSION=1.14.2
+RUNNER_TOOL_TERRAFORM_VERSION=1.16.4
 RUNNER_TOOL_TERRAFORM_EXECUTABLE=/usr/local/bin/terraform

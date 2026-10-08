@@ -8,15 +8,65 @@ It owns only the Terraform domain assertions in `ci/test-domain.sh`.
 
 ## Pinned conformance inputs
 
-- Base image: `ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003`
+- Base image: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`
 - Contract: `v001`
-- Conformance commit: `4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f`
+- Conformance commit: `5803155a3fe9e737668cdc196bc768f46727ec50`
 - Tools lock: `contracts/tools-lock/v001/tools.lock.json`
 - Domain test: `ci/test-domain.sh`
 
 GitHub Actions invokes the reusable workflow from the exact conformance commit.
-Local `make conformance` checks out tag `v0.3.0`, verifies that it resolves to the
+Local `make conformance` checks out tag `v0.3.2`, verifies that it resolves to the
 same full commit, and runs the same conformance script.
+
+## Release verification
+
+### Non-publishing candidate build
+
+`Build and validate derived image` is a deliberately portable CI template for
+runner-derived images. Its job-level inputs declare the candidate tag, immutable
+parent reference, Runner version, and contract version. The visible steps are:
+
+- build the local linux/amd64 candidate image;
+- compare its OCI parent label to the immutable parent reference;
+- verify the inherited Runner version and contract; and
+- invoke the repository-owned domain contract as the derivation extension hook.
+
+The job never pushes an image and never creates a release. A new derivative can
+copy the job, replace its declared inputs and domain-test path, and retain the
+same parent and inherited-contract checks.
+
+The pull-request CI additionally validates the release-workflow contract and
+release-only helpers. It builds a separate candidate image and fails on fixable
+high or critical CVEs using the same digest-pinned Trivy scanner used by the
+release workflow: Trivy 0.74.0
+(`sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`).
+
+The derived shell surface is checked with Bash syntax validation, a
+SHA-256-verified `shfmt` 3.13.1 binary, and ShellCheck. A repository-owned
+Dockerfile structure test rejects a floating parent, `ADD`, runtime identity
+build arguments, and any override of parent-owned `ENTRYPOINT`, `CMD`, or
+`WORKDIR`.
+
+The tag workflow never publishes an untested image. For a strict `vMAJOR.MINOR.PATCH`
+tag that points exactly at `main`, it:
+
+- creates a build context whose image version and revision equal the tag and
+  tagged commit;
+- builds the candidate and reruns the pinned `runner-base` derived conformance,
+  including the Terraform domain contract;
+- scans that exact candidate, generates an SPDX SBOM, and then either publishes
+  the new immutable version tag or verifies that a recovery run has the same
+  image configuration digest;
+- creates provenance and SBOM attestations and publishes the SBOM plus a
+  machine-readable release-evidence asset.
+
+These release-specific controls are verified locally by `make check` without
+requiring a tag, registry credentials, or publication.
+
+After the first release, a scheduled workflow resolves the latest GitHub
+Release to its immutable digest, scans it with the same Trivy policy, and
+uploads SARIF under `trivy-published-image` in GitHub Security. Before the
+first release, the scheduled scan has no target and exits without a report.
 
 ## Base conformance guarantees
 
@@ -35,9 +85,9 @@ The base bundle validates:
 `ci/test-domain.sh` validates:
 
 - the OCI parent label equals the conformance parent reference;
-- Runner 0.3.0 and contract v001 are inherited unchanged;
+- Runner 0.3.2 and contract v001 are inherited unchanged;
 - image identity, runtime identity, and the Terraform registry entry are exact;
-- `runner tool terraform` executes Terraform 1.14.2;
+- `runner tool terraform` executes Terraform 1.16.4;
 - source references remain consistent across the build, CI, local validation,
   domain test, and candidate documentation;
 - a Terraform child failure preserves exit code 1 through `runner tool`;

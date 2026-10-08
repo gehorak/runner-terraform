@@ -14,16 +14,137 @@ permissions:
   contents: read
   packages: read
 
+concurrency:
+  group: runner-terraform-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    name: Lint derived shell surface
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned shfmt
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          shfmt_path="${RUNNER_TEMP}/shfmt.download"
+          curl --fail --location --silent --show-error \
+            --output "${shfmt_path}" \
+            https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64
+          echo "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1  ${shfmt_path}" | sha256sum --check --status
+          install -m 0755 "${shfmt_path}" "${RUNNER_TEMP}/shfmt"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Run Bash syntax and shfmt checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash ci/lint-shell.sh
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+        with:
+          scandir: .
+          severity: warning
+          check_together: true
+          version: v0.11.0
+
+  build:
+    name: Build and validate derived image
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CANDIDATE_IMAGE: runner-terraform-build:${{ github.sha }}
+      BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
+      RUNNER_VERSION: 0.3.2
+      RUNNER_CONTRACT_VERSION: v001
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build candidate image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --platform linux/amd64 --tag "${CANDIDATE_IMAGE}" .
+
+      - name: Verify parent OCI provenance
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          actual_base="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.base.name" }}' "${CANDIDATE_IMAGE}")"
+          test "${actual_base}" = "${BASE_REFERENCE}"
+
+      - name: Verify inherited Runner contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          expected="runner ${RUNNER_VERSION} (contract ${RUNNER_CONTRACT_VERSION})"
+          actual="$(docker run --rm "${CANDIDATE_IMAGE}" --version)"
+          test "${actual}" = "${expected}"
+
+      - name: Validate derived domain contract
+        shell: bash
+        env:
+          IMAGE: runner-terraform-build:${{ github.sha }}
+          RUNNER_CONFORMANCE_VERSION: v001
+        run: bash ci/test-domain.sh
+
+  release-contract:
+    name: Validate release workflow and evidence helpers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate release support contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 ci/test-dockerfile-structure.py
+          python3 ci/test-ci-quality.py
+          python3 ci/test-release-workflow.py
+          python3 ci/test-release-support.py
+          python3 ci/test-published-security-scan.py
+
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract
-    uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f
+    uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@5803155a3fe9e737668cdc196bc768f46727ec50
     with:
       image: runner-terraform:conformance
       build_context: .
       dockerfile: Dockerfile
-      base_reference: ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
+      base_reference: ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
       expected_contract_version: v001
-      conformance_ref: 4bd01b01ab063a4f3bd2ce8bd3748577beb9e71f
+      conformance_ref: 5803155a3fe9e737668cdc196bc768f46727ec50
       tools_lock_path: contracts/tools-lock/v001/tools.lock.json
       domain_test_path: ci/test-domain.sh
+
+  image-security:
+    name: Scan candidate image for fixable high and critical CVEs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build image for vulnerability scan
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --platform linux/amd64 --tag runner-terraform-scan:${{ github.sha }} .
+          docker image save runner-terraform-scan:${{ github.sha }} --output runner-terraform-scan.tar
+
+      - name: Fail on fixable high or critical vulnerabilities
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --volume "${PWD}:/work:ro" \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            image --input /work/runner-terraform-scan.tar \
+            --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1

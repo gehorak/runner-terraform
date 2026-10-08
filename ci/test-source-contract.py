@@ -32,6 +32,7 @@ def require_contains(relative_paths: list[str], value: str, label: str) -> None:
 def main() -> int:
     dockerfile = read("Dockerfile")
     workflow = read(".github/workflows/ci.yml")
+    release_workflow = read(".github/workflows/release.yml")
     makefile = read("Makefile")
     domain_test = read("ci/test-domain.sh")
 
@@ -75,6 +76,14 @@ def main() -> int:
         terraform_version,
         "Terraform version",
     )
+
+    for value, label in (
+        (base_reference, "base reference"),
+        (conformance_reference, "conformance reference"),
+        (contract_version, "contract version"),
+    ):
+        if value not in release_workflow:
+            raise ValueError(f"release workflow is missing {label}")
 
     print("==> source contract is consistent")
     return 0

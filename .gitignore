@@ -101,6 +101,8 @@ docker-compose.local.yml
 .retry/
 .cache/
 .tmp/
+release-artifacts/
+release-context/
 
 
 # -----------------------------------------------------------------------------

@@ -3,9 +3,9 @@
   "tools": [
     {
       "name": "terraform",
-      "version": "1.14.2",
-      "source": "https://releases.hashicorp.com/terraform/1.14.2/terraform_1.14.2_linux_amd64.zip",
-      "sha256": "8314673d57e9fb8e01bfc98d074f51f7efb6e55484cfb2b10baed686de2190da"
+      "version": "1.16.4",
+      "source": "https://releases.hashicorp.com/terraform/1.16.4/terraform_1.16.4_linux_amd64.zip",
+      "sha256": "dc94af0eef1147718ad7c8daea792ed199e3e0492eec180d0adafa2a65a879df"
     }
   ]
 }

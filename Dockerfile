@@ -3,7 +3,7 @@
 # runner-terraform is a strict derived image. The parent is a released immutable
 # runner-base artifact; changing it requires an explicit reviewed PR and a full
 # conformance run.
-ARG BASE_IMAGE=ghcr.io/gehorak/runner-base:0.3.0@sha256:8e663302934d78f5edd77f7c07cf3f66813085f1922f5a27ad379a6ca6831003
+ARG BASE_IMAGE=ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
 FROM ${BASE_IMAGE}
 
 ARG BASE_IMAGE

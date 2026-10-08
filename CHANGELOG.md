@@ -1,19 +1,33 @@
 # Changelog
 
 All notable changes to `runner-terraform` are documented here. The project uses
-Semantic Versioning. No public `runner-terraform` release exists yet.
+Semantic Versioning.
 
-## [Unreleased] - runner-base v0.3.0 reference adoption
+## [Unreleased]
 
 ### Added
 
-- Immutable parent reference to released `runner-base` v0.3.0.
+- Non-publishing CI candidate-image build with reusable parent and inherited
+  Runner contract checks.
+
+## [0.3.2]
+
+### Added
+
+- Immutable parent reference to released `runner-base` v0.3.2.
 - Derived overlay manifest using the base-owned metadata materializer.
-- Terraform 1.14.2 integrity evidence in `tools.lock` v001.
+- Terraform 1.16.4 integrity evidence in `tools.lock` v001.
+- Trivy 0.74.0 pinned for candidate and release vulnerability scans.
+- Scheduled scan of the latest published immutable digest with SARIF reporting.
+- Dependabot coverage for the Dockerfile parent reference and GitHub Actions.
+- Release build action pin aligned with the reviewed `runner-base` v0.3.2 pin.
 - Commit-pinned Runner base conformance and explicit Terraform domain tests.
 - Offline Terraform initialization and validation fixture using `terraform_data`.
 - Source-contract consistency validation for the parent, conformance, contract,
   and Terraform version references.
+- Tag-gated release verification: tag binding, pinned derived conformance,
+  vulnerability scanning, SBOM generation, immutable publication recovery, and
+  provenance/SBOM attestations.
 
 ### Changed
 
@@ -27,8 +41,8 @@ Semantic Versioning. No public `runner-terraform` release exists yet.
 - Derived ownership of runtime user fields, entrypoint behavior, metadata
   parsing, base contract tests, and inherited base documentation.
 - The `tf` compatibility alias and redundant derived `WORKDIR /workspace`.
-- The pre-conformance release workflow; image publication remains deferred until
-  this reference candidate has passed review and conformance.
+- The pre-conformance release workflow that could publish without the derived
+  conformance and release-security gates.
 
 ## Versioning policy
 
