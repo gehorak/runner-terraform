@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 
@@ -24,6 +25,7 @@ required = (
     "aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969",
     "docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc",
     "anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c",
+    "docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550",
     "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
     "ci/release-publication-state.py",
     "ci/inspect-ghcr-manifest.py",
@@ -51,5 +53,10 @@ assert workflow.index("Verify published config matches tested candidate") < work
     "Publish release evidence assets"
 )
 assert "docker manifest inspect" not in workflow
+
+action_pins = re.findall(r"^\s*uses:\s+([^@\s]+)@([^\s#]+)", workflow, re.MULTILINE)
+assert action_pins, "release workflow must declare pinned actions"
+for action, revision in action_pins:
+    assert re.fullmatch(r"[0-9a-f]{40}", revision), f"{action} is not pinned by commit SHA"
 
 print("==> release workflow contract passed")

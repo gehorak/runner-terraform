@@ -13,7 +13,9 @@ Semantic Versioning.
   runtime tools alongside Terraform.
 - Digest-pinned Trivy image and Terraform-fixture scans in CI.
 - Adopted runner-base v0.3.3 by immutable digest and pinned Terraform CLI 1.17.1.
-- Updated the release workflow docker/login-action pin to v4.7.0.
+- Refreshed pinned `docker/login-action` to v4.8.0,
+  `anchore/sbom-action` to v0.24.3, and
+  `github/codeql-action/upload-sarif` to v4.39.4.
 
 ### Changed
 
