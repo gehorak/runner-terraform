@@ -31,6 +31,12 @@ required = (
     "ci/inspect-ghcr-manifest.py",
     "GHCR_USERNAME: ${{ github.actor }}",
     "GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
+    "candidate_config_digest",
+    "published_config_digest",
+    "--existing-config-digest",
+    "--candidate-config-digest",
+    'value["config_digest"]',
+    'value["config_digest"]',
     "ci/write-release-evidence.py",
     "softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
 )
@@ -44,12 +50,12 @@ assert workflow.index("Scan exact tested release candidate") < workflow.index(
     "Publish or resume immutable tested image"
 )
 assert workflow.index("Publish or resume immutable tested image") < workflow.index(
-    "Verify published config matches tested candidate"
+    "Verify published image matches tested candidate"
 )
-assert workflow.index("Verify published config matches tested candidate") < workflow.index(
+assert workflow.index("Verify published image matches tested candidate") < workflow.index(
     "Resolve published image digest"
 )
-assert workflow.index("Verify published config matches tested candidate") < workflow.index(
+assert workflow.index("Verify published image matches tested candidate") < workflow.index(
     "Publish release evidence assets"
 )
 assert "docker manifest inspect" not in workflow

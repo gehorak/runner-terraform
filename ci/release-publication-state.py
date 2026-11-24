@@ -25,7 +25,7 @@ def main() -> int:
         if SHA256.fullmatch(args.existing_config_digest) is None:
             raise ValueError("existing config digest must be sha256 or absent")
         if args.existing_config_digest != args.candidate_config_digest:
-            raise ValueError("existing immutable release does not match the tested candidate configuration digest")
+            raise ValueError("existing immutable release does not match the tested candidate config digest")
         print("resume")
         return 0
     except ValueError as error:
