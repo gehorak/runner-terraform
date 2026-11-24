@@ -16,11 +16,18 @@ image tarball for fixable high and critical vulnerabilities.
 
 After those gates pass, the workflow generates an SPDX SBOM and publishes only
 the immutable `ghcr.io/gehorak/runner-terraform:<version>` tag. If that tag is
-already present, recovery is allowed only when its linux/amd64 image
-configuration digest matches the tested candidate. The registry inspector also
-validates the root manifest digest and the selected platform manifest against
-the OCI index descriptor. Version-minor and `latest` aliases are updated only
-after the immutable image, attestations, and release evidence exist.
+already present, recovery is allowed only when its root manifest digest matches
+the digest reported by the tested BuildKit candidate. The registry inspector
+also validates the root body digest, linux/amd64 child manifest digest, and
+child configuration digest against the OCI index descriptor. Version-minor and
+`latest` aliases are updated only after the immutable image, attestations, and
+release evidence exist.
+
+The candidate's `org.opencontainers.image.created` label uses the tagged
+commit's timestamp. Inline BuildKit provenance is disabled for the image
+build; the release workflow creates and attaches GitHub provenance and SBOM
+attestations after testing. This keeps rebuilds for the same tag bound to a
+stable image identity.
 
 ## Published evidence
 
@@ -35,7 +42,7 @@ Provenance and SBOM attestations are attached to the published GHCR image.
 They are separate evidence from pull-request CI and must be verified after a
 release run completes.
 
-## Recovering the existing v0.4.0 image
+## Recovering already-published images
 
 The immutable `v0.4.0` GHCR image was published before its original release run
 stopped at registry verification. After the recovery workflow is merged, run
@@ -50,3 +57,10 @@ assets before copying the exact existing image index to the `0.4` and `latest`
 aliases. It does not build or push another `0.4.0` image and does not create,
 move, or delete a Git tag. Alias digests are checked against the pinned image
 digest after each copy.
+
+The immutable `v0.4.1` image was also published before its release workflow
+stopped at candidate-digest verification. After the recovery workflow is
+merged, run **Recover v0.4.1 release evidence** from `main`. It is fixed to the
+recorded `v0.4.1` source commit and root image digest, performs the same
+validation and evidence steps, and then updates `0.4` and `latest` to v0.4.1.
+It does not rebuild or move the immutable `v0.4.1` tag.

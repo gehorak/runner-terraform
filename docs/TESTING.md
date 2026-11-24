@@ -56,13 +56,16 @@ tag that points exactly at `main`, it:
 
 - creates a build context whose image version and revision equal the tag and
   tagged commit;
+- pins the image-created label to the tag commit timestamp and disables inline
+  BuildKit provenance so reruns retain a stable candidate identity; GitHub
+  provenance and SBOM attestations are attached after release gates pass;
 - builds the candidate and reruns the pinned `runner-base` derived conformance,
   including the Terraform domain contract;
 - scans that exact candidate, generates an SPDX SBOM, and then either publishes
   the new immutable version tag or verifies that a recovery run has the same
-  linux/amd64 image configuration digest; the inspector validates the root
-  manifest and child descriptor, and compares the child configuration with the
-  exact tested candidate before attestation;
+  root manifest digest reported by the tested BuildKit candidate; the
+  inspector separately validates the root body digest, linux/amd64 child
+  descriptor, and child configuration before attestation;
 - creates provenance and SBOM attestations and publishes the SBOM plus a
   machine-readable release-evidence asset.
 

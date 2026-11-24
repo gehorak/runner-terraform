@@ -68,23 +68,23 @@ with tempfile.TemporaryDirectory() as directory:
 
     assert invoke(
         str(ROOT / "ci/release-publication-state.py"),
-        "--existing-config-digest",
+        "--existing-image-digest",
         "absent",
-        "--candidate-config-digest",
+        "--candidate-image-digest",
         DIGEST,
     ).stdout.strip() == "publish"
     assert invoke(
         str(ROOT / "ci/release-publication-state.py"),
-        "--existing-config-digest",
+        "--existing-image-digest",
         DIGEST,
-        "--candidate-config-digest",
+        "--candidate-image-digest",
         DIGEST,
     ).stdout.strip() == "resume"
     conflict = invoke(
         str(ROOT / "ci/release-publication-state.py"),
-        "--existing-config-digest",
+        "--existing-image-digest",
         "sha256:" + "b" * 64,
-        "--candidate-config-digest",
+        "--candidate-image-digest",
         DIGEST,
     )
     assert conflict.returncode == 1
@@ -208,6 +208,16 @@ with tempfile.TemporaryDirectory() as directory:
     assert inspected["config_digest"] == DIGEST
     assert requested_urls[-1].endswith("/manifests/" + platform_manifest_digest)
     assert not registry_responses
+
+    # Publication identity is the root image manifest digest, not the child config digest.
+    assert index_digest != inspected["config_digest"]
+    assert invoke(
+        str(ROOT / "ci/release-publication-state.py"),
+        "--existing-image-digest",
+        index_digest,
+        "--candidate-image-digest",
+        index_digest,
+    ).stdout.strip() == "resume"
 
     assert inspect_ghcr_manifest.classify_response(
         200, index_body, {"Docker-Content-Digest": index_digest}

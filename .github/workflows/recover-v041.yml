@@ -1,0 +1,236 @@
+name: Recover v0.4.1 release evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: runner-terraform-release
+  cancel-in-progress: false
+
+env:
+  TAG: v0.4.1
+  VERSION: 0.4.1
+  EXPECTED_COMMIT: 32fc7f7eba2e732b80e1b4f1d410dd8294f31149
+  EXPECTED_IMAGE_DIGEST: sha256:49791a47e049e05ccf0d4e852c896275b82692a0139c327ff773cd39c8ca005f
+  BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2
+  CONFORMANCE_REF: 94b070419c6ce4a4e17d7639cff61a4fd1adbc63
+
+jobs:
+  recover:
+    name: Verify and complete v0.4.1 evidence
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout recovery workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Validate fixed recovery target
+        id: target
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "${GITHUB_REF}" == "refs/heads/main" ]] || {
+            echo "ERROR: recovery must run from main" >&2
+            exit 1
+          }
+          git fetch origin main --tags
+          [[ "$(git rev-parse HEAD)" == "${GITHUB_SHA}" ]] || {
+            echo "ERROR: checkout does not match the dispatched main commit" >&2
+            exit 1
+          }
+          [[ "$(git rev-parse origin/main)" == "${GITHUB_SHA}" ]] || {
+            echo "ERROR: main moved after this recovery run was dispatched" >&2
+            exit 1
+          }
+          release_commit="$(git rev-parse "refs/tags/${TAG}^{commit}")"
+          [[ "${release_commit}" == "${EXPECTED_COMMIT}" ]] || {
+            echo "ERROR: v0.4.1 no longer points to its recorded source commit" >&2
+            exit 1
+          }
+          git merge-base --is-ancestor "${release_commit}" origin/main || {
+            echo "ERROR: v0.4.1 source commit is not on main" >&2
+            exit 1
+          }
+          echo "commit=${release_commit}" >> "${GITHUB_OUTPUT}"
+
+      - name: Checkout immutable v0.4.1 source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.target.outputs.commit }}
+          path: release-source
+          fetch-depth: 0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inspect immutable GHCR image
+        id: image
+        shell: bash
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          reference="ghcr.io/gehorak/runner-terraform:${VERSION}"
+          inspection="$(python3 ci/inspect-ghcr-manifest.py --reference "${reference}")"
+          image_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); assert value["state"] == "present", "published image is absent"; print(value["manifest_digest"])')"
+          platform_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); print(value.get("platform_manifest_digest", ""))')"
+          [[ "${image_digest}" == "${EXPECTED_IMAGE_DIGEST}" ]] || {
+            echo "ERROR: published image digest differs from the recorded tested candidate" >&2
+            exit 1
+          }
+          [[ "${platform_digest}" =~ ^sha256:[0-9a-f]{64}$ ]] || {
+            echo "ERROR: published index has no valid linux/amd64 manifest" >&2
+            exit 1
+          }
+          echo "digest=${image_digest}" >> "${GITHUB_OUTPUT}"
+          echo "platform_digest=${platform_digest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pull and validate exact published image
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          RELEASE_COMMIT: ${{ steps.target.outputs.commit }}
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/gehorak/runner-terraform@${IMAGE_DIGEST}"
+          docker pull --platform linux/amd64 "${image}"
+          docker image tag "${image}" runner-recovery:test
+          version="$(docker image inspect runner-recovery:test --format '{{ index .Config.Labels "org.opencontainers.image.version" }}')"
+          revision="$(docker image inspect runner-recovery:test --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
+          parent="$(docker image inspect runner-recovery:test --format '{{ index .Config.Labels "org.opencontainers.image.base.name" }}')"
+          [[ "${version}" == "${VERSION}" ]] || { echo "ERROR: image version label mismatch" >&2; exit 1; }
+          [[ "${revision}" == "${RELEASE_COMMIT}" ]] || { echo "ERROR: image revision label mismatch" >&2; exit 1; }
+          [[ "${parent}" == "${BASE_REFERENCE}" ]] || { echo "ERROR: image parent label mismatch" >&2; exit 1; }
+
+      - name: Run v0.4.1 derived conformance
+        working-directory: release-source
+        shell: bash
+        env:
+          IMAGE: runner-recovery:test
+          EXPECTED_IMAGE_VERSION: ${{ env.VERSION }}
+          EXPECTED_IMAGE_REVISION: ${{ steps.target.outputs.commit }}
+        run: |
+          set -Eeuo pipefail
+          bash ci/run-release-candidate-checks.sh
+
+      - name: Scan exact published release image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p release-artifacts
+          docker image save runner-recovery:test --output "${RUNNER_TEMP}/runner-terraform-0.4.1.tar"
+          docker run --rm --volume "${RUNNER_TEMP}:/work:ro" \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            image --input /work/runner-terraform-0.4.1.tar \
+            --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+
+      - name: Generate SPDX SBOM for published image
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          image: runner-recovery:test
+          format: spdx-json
+          output-file: release-artifacts/runner-terraform-0.4.1.sbom.spdx.json
+          artifact-name: runner-terraform-0.4.1.sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.46.0
+
+      - name: Attest published image provenance
+        id: attest-provenance
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/gehorak/runner-terraform
+          subject-digest: ${{ steps.image.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+
+      - name: Attest published image SBOM
+        id: attest-sbom
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ghcr.io/gehorak/runner-terraform
+          subject-digest: ${{ steps.image.outputs.digest }}
+          sbom-path: release-artifacts/runner-terraform-0.4.1.sbom.spdx.json
+          push-to-registry: true
+          create-storage-record: false
+
+      - name: Write v0.4.1 release evidence
+        shell: bash
+        env:
+          RELEASE_COMMIT: ${{ steps.target.outputs.commit }}
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+          PROVENANCE_ATTESTATION: ${{ steps.attest-provenance.outputs.attestation-url }}
+          SBOM_ATTESTATION: ${{ steps.attest-sbom.outputs.attestation-url }}
+        run: |
+          set -Eeuo pipefail
+          python3 release-source/ci/write-release-evidence.py \
+            --output release-artifacts/runner-terraform-0.4.1.release-evidence.json \
+            --tag "${TAG}" \
+            --commit "${RELEASE_COMMIT}" \
+            --image-reference "ghcr.io/gehorak/runner-terraform:${VERSION}" \
+            --image-digest "${IMAGE_DIGEST}" \
+            --parent-reference "${BASE_REFERENCE}" \
+            --conformance-ref "${CONFORMANCE_REF}" \
+            --sbom runner-terraform-0.4.1.sbom.spdx.json \
+            --provenance-attestation "${PROVENANCE_ATTESTATION}" \
+            --sbom-attestation "${SBOM_ATTESTATION}"
+
+      - name: Revalidate v0.4.1 tag before release publication
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          remote_tag_commit="$(git ls-remote origin "refs/tags/${TAG}^{}" | cut -f 1)"
+          [[ "${remote_tag_commit}" == "${EXPECTED_COMMIT}" ]] || {
+            echo "ERROR: remote v0.4.1 tag moved during recovery" >&2
+            exit 1
+          }
+
+      - name: Publish release evidence assets
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: v0.4.1
+          name: runner-terraform v0.4.1
+          generate_release_notes: true
+          make_latest: true
+          overwrite_files: true
+          files: |
+            release-artifacts/runner-terraform-0.4.1.release-evidence.json
+            release-artifacts/runner-terraform-0.4.1.sbom.spdx.json
+          fail_on_unmatched_files: true
+
+      - name: Publish convenience aliases after immutable evidence
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          remote_tag_commit="$(git ls-remote origin "refs/tags/${TAG}^{}" | cut -f 1)"
+          [[ "${remote_tag_commit}" == "${EXPECTED_COMMIT}" ]] || {
+            echo "ERROR: remote v0.4.1 tag moved before alias publication" >&2
+            exit 1
+          }
+          source="ghcr.io/gehorak/runner-terraform@${IMAGE_DIGEST}"
+          for alias in 0.4 latest; do
+            reference="ghcr.io/gehorak/runner-terraform:${alias}"
+            docker buildx imagetools create --tag "${reference}" "${source}"
+            observed_digest="sha256:$(docker buildx imagetools inspect --raw "${reference}" | sha256sum | cut -d ' ' -f 1)"
+            [[ "${observed_digest}" == "${IMAGE_DIGEST}" ]] || {
+              echo "ERROR: convenience alias ${alias} does not match the immutable release image" >&2
+              exit 1
+            }
+          done
