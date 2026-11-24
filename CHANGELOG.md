@@ -10,11 +10,13 @@ Semantic Versioning.
 ### Fixed
 
 - GHCR release verification now supports OCI image indexes and Docker manifest
-  lists, validates the linux/amd64 child manifest, and compares its image
-  configuration with the tested candidate.
-- Added a pinned recovery workflow for the existing `v0.4.0` image to complete
-  validation and release evidence without rebuilding or moving its immutable
-  tag.
+  lists, validates the linux/amd64 child manifest, and compares the published
+  root digest with the tested BuildKit image digest. Release builds use stable
+  commit metadata and rely on GitHub attestations instead of build-time inline
+  provenance for repeatable candidate identity.
+- Added pinned recovery workflows for existing `v0.4.0` and `v0.4.1` images to
+  complete validation and release evidence without rebuilding or moving their
+  immutable tags.
 
 ### Tests
 

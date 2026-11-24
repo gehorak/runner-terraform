@@ -48,6 +48,7 @@ jobs:
             echo "version=${VERSION}"
             echo "version_mm=${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
             echo "commit=$(git rev-parse HEAD)"
+            echo "commit_date=$(git show -s --format=%cI HEAD)"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Ensure tag is on main and increases version
@@ -93,16 +94,19 @@ jobs:
           labels: |
             org.opencontainers.image.title=runner-terraform
             org.opencontainers.image.description=Deterministic Terraform tooling runner derived from runner-base
+            org.opencontainers.image.created=${{ steps.semver.outputs.commit_date }}
             org.opencontainers.image.source=https://github.com/gehorak/runner-terraform
             org.opencontainers.image.version=${{ steps.semver.outputs.version }}
             org.opencontainers.image.revision=${{ steps.semver.outputs.commit }}
             org.opencontainers.image.base.name=${{ env.BASE_REFERENCE }}
 
       - name: Build tag-bound release image
+        id: candidate
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: release-context
           load: true
+          provenance: false
           platforms: linux/amd64
           build-args: BASE_IMAGE=${{ env.BASE_REFERENCE }}
           tags: |
@@ -160,42 +164,42 @@ jobs:
           set -Eeuo pipefail
           reference="ghcr.io/gehorak/runner-terraform:${VERSION}"
           inspection="$(python3 ci/inspect-ghcr-manifest.py --reference "${reference}")"
-          existing_config_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); print(value["config_digest"] if value["state"] == "present" else "absent")')"
-          echo "config_digest=${existing_config_digest}" >> "${GITHUB_OUTPUT}"
+          existing_image_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); print(value["manifest_digest"] if value["state"] == "present" else "absent")')"
+          echo "image_digest=${existing_image_digest}" >> "${GITHUB_OUTPUT}"
 
       - name: Publish or resume immutable tested image
         id: publication
         shell: bash
         env:
           VERSION: ${{ steps.semver.outputs.version }}
-          EXISTING_CONFIG_DIGEST: ${{ steps.existing-release.outputs.config_digest }}
+          EXISTING_IMAGE_DIGEST: ${{ steps.existing-release.outputs.image_digest }}
+          CANDIDATE_IMAGE_DIGEST: ${{ steps.candidate.outputs.digest }}
         run: |
           set -Eeuo pipefail
-          candidate_config_digest="$(docker image inspect runner-release:test --format '{{.Id}}')"
           mode="$(python3 ci/release-publication-state.py \
-            --existing-config-digest "${EXISTING_CONFIG_DIGEST}" \
-            --candidate-config-digest "${candidate_config_digest}")"
+            --existing-image-digest "${EXISTING_IMAGE_DIGEST}" \
+            --candidate-image-digest "${CANDIDATE_IMAGE_DIGEST}")"
           if [[ "${mode}" == publish ]]; then
             docker image tag runner-release:test "ghcr.io/gehorak/runner-terraform:${VERSION}"
             docker image push "ghcr.io/gehorak/runner-terraform:${VERSION}"
           fi
-          echo "candidate_config_digest=${candidate_config_digest}" >> "${GITHUB_OUTPUT}"
+          echo "candidate_image_digest=${CANDIDATE_IMAGE_DIGEST}" >> "${GITHUB_OUTPUT}"
           echo "mode=${mode}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify published image matches tested candidate
         shell: bash
         env:
           VERSION: ${{ steps.semver.outputs.version }}
-          CANDIDATE_CONFIG_DIGEST: ${{ steps.publication.outputs.candidate_config_digest }}
+          CANDIDATE_IMAGE_DIGEST: ${{ steps.publication.outputs.candidate_image_digest }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -Eeuo pipefail
           reference="ghcr.io/gehorak/runner-terraform:${VERSION}"
           inspection="$(python3 ci/inspect-ghcr-manifest.py --reference "${reference}")"
-          published_config_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); assert value["state"] == "present", "published tag is absent"; print(value["config_digest"])')"
-          [[ "${published_config_digest}" == "${CANDIDATE_CONFIG_DIGEST}" ]] || {
-            echo "ERROR: published linux/amd64 image config does not match the tested candidate" >&2
+          published_image_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); assert value["state"] == "present", "published tag is absent"; print(value["manifest_digest"])')"
+          [[ "${published_image_digest}" == "${CANDIDATE_IMAGE_DIGEST}" ]] || {
+            echo "ERROR: published image manifest does not match the tested candidate" >&2
             exit 1
           }
 
