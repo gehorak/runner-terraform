@@ -5,6 +5,24 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.4.1]
+
+### Fixed
+
+- GHCR release verification now supports OCI image indexes and Docker manifest
+  lists, validates the linux/amd64 child manifest, and compares its image
+  configuration with the tested candidate.
+- Added a pinned recovery workflow for the existing `v0.4.0` image to complete
+  validation and release evidence without rebuilding or moving its immutable
+  tag.
+
+### Tests
+
+- Added registry response and recovery-workflow contract coverage for release
+  verification and evidence recovery.
+
+## [0.4.0]
+
 ### Added
 
 - Non-publishing CI candidate-image build with reusable parent and inherited
@@ -23,14 +41,6 @@ Semantic Versioning.
 - Release recovery distinguishes a confirmed absent GHCR manifest from
   registry errors and verifies the published linux/amd64 image configuration
   against the tested candidate before attestation.
-
-### Fixed
-
-- GHCR release verification now supports OCI image indexes and Docker manifest
-  lists, verifies the linux/amd64 child manifest digest, and compares its image
-  configuration with the tested candidate.
-- Added a pinned recovery workflow for the existing `v0.4.0` image; it completes
-  validation and evidence without rebuilding or moving the immutable image tag.
 
 ### Tests
 
