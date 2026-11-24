@@ -20,9 +20,17 @@ Semantic Versioning.
 ### Changed
 
 - Removed Trivy from the runtime image; CI retains its separately pinned scanner.
-- Release recovery now distinguishes a confirmed absent GHCR manifest from
-  registry errors and verifies the published config digest against the tested
-  candidate before attestation.
+- Release recovery distinguishes a confirmed absent GHCR manifest from
+  registry errors and verifies the published linux/amd64 image configuration
+  against the tested candidate before attestation.
+
+### Fixed
+
+- GHCR release verification now supports OCI image indexes and Docker manifest
+  lists, verifies the linux/amd64 child manifest digest, and compares its image
+  configuration with the tested candidate.
+- Added a pinned recovery workflow for the existing `v0.4.0` image; it completes
+  validation and evidence without rebuilding or moving the immutable image tag.
 
 ### Tests
 

@@ -33,6 +33,7 @@ lint:
 	python3 ci/test-ci-quality.py
 	python3 ci/test-source-contract.py
 	python3 ci/test-release-workflow.py
+	python3 ci/test-release-recovery-workflow.py
 	python3 ci/test-release-support.py
 	python3 ci/test-published-security-scan.py
 	python3 -m json.tool $(TOOLS_LOCK) >/dev/null

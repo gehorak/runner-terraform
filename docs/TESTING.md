@@ -60,8 +60,9 @@ tag that points exactly at `main`, it:
   including the Terraform domain contract;
 - scans that exact candidate, generates an SPDX SBOM, and then either publishes
   the new immutable version tag or verifies that a recovery run has the same
-  image configuration digest; after publication it compares the registry
-  config digest with the exact tested candidate before attestation;
+  linux/amd64 image configuration digest; the inspector validates the root
+  manifest and child descriptor, and compares the child configuration with the
+  exact tested candidate before attestation;
 - creates provenance and SBOM attestations and publishes the SBOM plus a
   machine-readable release-evidence asset.
 

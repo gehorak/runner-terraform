@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 import importlib.util
 import base64
+import hashlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -92,9 +94,155 @@ with tempfile.TemporaryDirectory() as directory:
         "mediaType": "application/vnd.oci.image.manifest.v1+json",
         "config": {"digest": DIGEST},
     }
+    manifest_body = json.dumps(manifest).encode("utf-8")
+    manifest_digest = "sha256:" + hashlib.sha256(manifest_body).hexdigest()
+    assert inspect_ghcr_manifest.classify_response(200, manifest_body) == {
+        "state": "present",
+        "manifest_digest": manifest_digest,
+        "config_digest": DIGEST,
+    }
+
+    image_index = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "manifests": [
+            {
+                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                "digest": "sha256:" + "c" * 64,
+                "platform": {"os": "linux", "architecture": "amd64"},
+            },
+            {
+                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                "digest": "sha256:" + "d" * 64,
+                "platform": {"os": "unknown", "architecture": "unknown"},
+            },
+        ],
+    }
+    index_body = json.dumps(image_index).encode("utf-8")
+    index_digest = "sha256:" + hashlib.sha256(index_body).hexdigest()
+    assert inspect_ghcr_manifest.classify_response(200, index_body) == {
+        "state": "present",
+        "manifest_digest": index_digest,
+        "platform_manifest_digest": "sha256:" + "c" * 64,
+    }
+    assert "application/vnd.oci.image.index.v1+json" in inspect_ghcr_manifest.MANIFEST_ACCEPT
+    assert "application/vnd.docker.distribution.manifest.list.v2+json" in inspect_ghcr_manifest.MANIFEST_ACCEPT
+
+    docker_manifest_list = {
+        **image_index,
+        "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+    }
+    docker_list_body = json.dumps(docker_manifest_list).encode("utf-8")
+    assert inspect_ghcr_manifest.classify_response(200, docker_list_body)[
+        "platform_manifest_digest"
+    ] == "sha256:" + "c" * 64
+
+    platform_manifest = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "config": {"digest": DIGEST},
+    }
+    platform_body = json.dumps(platform_manifest).encode("utf-8")
+    platform_manifest_digest = "sha256:" + hashlib.sha256(platform_body).hexdigest()
+    published_index = {
+        **image_index,
+        "manifests": [
+            {
+                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                "digest": platform_manifest_digest,
+                "platform": {"os": "linux", "architecture": "amd64"},
+            }
+        ],
+    }
+    published_index_body = json.dumps(published_index).encode("utf-8")
+    registry_responses = [
+        (200, b'{"token":"test-token"}', {}),
+        (200, published_index_body, {}),
+        (200, platform_body, {"Docker-Content-Digest": platform_manifest_digest}),
+    ]
+    requested_urls: list[str] = []
+
+    class FakeResponse:
+        def __init__(self, status: int, body: bytes, headers: dict[str, str]) -> None:
+            self.status = status
+            self._body = body
+            self.headers = headers
+
+        def __enter__(self) -> FakeResponse:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return self._body
+
+    original_urlopen = inspect_ghcr_manifest.urlopen
+
+    def fake_urlopen(request: object, timeout: int) -> FakeResponse:
+        requested_urls.append(request.full_url)
+        status, body, headers = registry_responses.pop(0)
+        return FakeResponse(status, body, headers)
+
+    inspect_ghcr_manifest.urlopen = fake_urlopen
+    previous_username = os.environ.get("GHCR_USERNAME")
+    previous_token = os.environ.get("GHCR_TOKEN")
+    os.environ["GHCR_USERNAME"] = "runner"
+    os.environ["GHCR_TOKEN"] = "test-token"
+    try:
+        inspected = inspect_ghcr_manifest.inspect_reference(
+            "ghcr.io/gehorak/runner-terraform:0.4.0"
+        )
+    finally:
+        inspect_ghcr_manifest.urlopen = original_urlopen
+        if previous_username is None:
+            os.environ.pop("GHCR_USERNAME", None)
+        else:
+            os.environ["GHCR_USERNAME"] = previous_username
+        if previous_token is None:
+            os.environ.pop("GHCR_TOKEN", None)
+        else:
+            os.environ["GHCR_TOKEN"] = previous_token
+    assert inspected["manifest_digest"] == "sha256:" + hashlib.sha256(published_index_body).hexdigest()
+    assert inspected["platform_manifest_digest"] == platform_manifest_digest
+    assert inspected["config_digest"] == DIGEST
+    assert requested_urls[-1].endswith("/manifests/" + platform_manifest_digest)
+    assert not registry_responses
+
     assert inspect_ghcr_manifest.classify_response(
-        200, json.dumps(manifest).encode("utf-8")
-    ) == {"state": "present", "config_digest": DIGEST}
+        200, index_body, {"Docker-Content-Digest": index_digest}
+    )["manifest_digest"] == index_digest
+    try:
+        inspect_ghcr_manifest.classify_response(
+            200, index_body, {"Docker-Content-Digest": "sha256:" + "e" * 64}
+        )
+    except inspect_ghcr_manifest.RegistryError:
+        pass
+    else:
+        raise AssertionError("registry digest header mismatch was accepted")
+
+    invalid_index = {**image_index, "manifests": image_index["manifests"][1:]}
+    try:
+        inspect_ghcr_manifest.classify_response(
+            200, json.dumps(invalid_index).encode("utf-8")
+        )
+    except inspect_ghcr_manifest.RegistryError:
+        pass
+    else:
+        raise AssertionError("index without a linux/amd64 manifest was accepted")
+
+    duplicate_platform_index = {
+        **image_index,
+        "manifests": image_index["manifests"][:1] * 2,
+    }
+    try:
+        inspect_ghcr_manifest.classify_response(
+            200, json.dumps(duplicate_platform_index).encode("utf-8")
+        )
+    except inspect_ghcr_manifest.RegistryError:
+        pass
+    else:
+        raise AssertionError("index with ambiguous linux/amd64 manifests was accepted")
     assert inspect_ghcr_manifest.classify_response(
         404, b'{"errors":[{"code":"MANIFEST_UNKNOWN"}]}'
     ) == {"state": "absent"}

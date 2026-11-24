@@ -182,7 +182,7 @@ jobs:
           echo "candidate_config_digest=${candidate_config_digest}" >> "${GITHUB_OUTPUT}"
           echo "mode=${mode}" >> "${GITHUB_OUTPUT}"
 
-      - name: Verify published config matches tested candidate
+      - name: Verify published image matches tested candidate
         shell: bash
         env:
           VERSION: ${{ steps.semver.outputs.version }}
@@ -195,7 +195,7 @@ jobs:
           inspection="$(python3 ci/inspect-ghcr-manifest.py --reference "${reference}")"
           published_config_digest="$(printf '%s' "${inspection}" | python3 -c 'import json, sys; value=json.load(sys.stdin); assert value["state"] == "present", "published tag is absent"; print(value["config_digest"])')"
           [[ "${published_config_digest}" == "${CANDIDATE_CONFIG_DIGEST}" ]] || {
-            echo "ERROR: published image config does not match the tested candidate" >&2
+            echo "ERROR: published linux/amd64 image config does not match the tested candidate" >&2
             exit 1
           }
 
