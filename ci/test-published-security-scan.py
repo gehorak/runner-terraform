@@ -22,7 +22,7 @@ required = (
     "aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969",
     "--scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1",
     "--format sarif --output /work/trivy.sarif",
-    "github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d",
+    "github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea",
     "category: trivy-published-image",
 )
 for value in required:
