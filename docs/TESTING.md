@@ -4,18 +4,19 @@
 
 Runner platform behavior is tested by the immutable conformance bundle supplied
 by `runner-base`. This repository does not copy or maintain the base test suite.
-It owns only the Terraform domain assertions in `ci/test-domain.sh`.
+It owns the Terraform, jq, terraform-docs, and TFLint domain assertions in
+`ci/test-domain.sh`.
 
 ## Pinned conformance inputs
 
-- Base image: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`
+- Base image: `ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2`
 - Contract: `v001`
-- Conformance commit: `5803155a3fe9e737668cdc196bc768f46727ec50`
+- Conformance commit: `94b070419c6ce4a4e17d7639cff61a4fd1adbc63`
 - Tools lock: `contracts/tools-lock/v001/tools.lock.json`
 - Domain test: `ci/test-domain.sh`
 
 GitHub Actions invokes the reusable workflow from the exact conformance commit.
-Local `make conformance` checks out tag `v0.3.2`, verifies that it resolves to the
+Local `make conformance` checks out tag `v0.3.3`, verifies that it resolves to the
 same full commit, and runs the same conformance script.
 
 ## Release verification
@@ -37,9 +38,12 @@ same parent and inherited-contract checks.
 
 The pull-request CI additionally validates the release-workflow contract and
 release-only helpers. It builds a separate candidate image and fails on fixable
-high or critical CVEs using the same digest-pinned Trivy scanner used by the
-release workflow: Trivy 0.74.0
-(`sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`).
+high or critical CVEs using the digest-pinned Trivy scanner container, Trivy
+0.74.0 (`sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969`).
+It scans a clean Terraform fixture for high or critical misconfigurations and
+checks that an intentionally insecure S3 fixture produces the expected
+high-severity `AWS-0086` finding. Those fixtures are this repository's only
+Terraform configurations; they do not represent external workspaces.
 
 The derived shell surface is checked with Bash syntax validation, a
 SHA-256-verified `shfmt` 3.13.1 binary, and ShellCheck. A repository-owned
@@ -56,12 +60,15 @@ tag that points exactly at `main`, it:
   including the Terraform domain contract;
 - scans that exact candidate, generates an SPDX SBOM, and then either publishes
   the new immutable version tag or verifies that a recovery run has the same
-  image configuration digest;
+  image configuration digest; after publication it compares the registry
+  config digest with the exact tested candidate before attestation;
 - creates provenance and SBOM attestations and publishes the SBOM plus a
   machine-readable release-evidence asset.
 
-These release-specific controls are verified locally by `make check` without
-requiring a tag, registry credentials, or publication.
+The release state classifier and workflow ordering are verified locally by
+`make lint` without a tag or publication. Live GHCR state inspection requires
+network access and recognizes only a confirmed `MANIFEST_UNKNOWN` response as
+an absent version tag.
 
 After the first release, a scheduled workflow resolves the latest GitHub
 Release to its immutable digest, scans it with the same Trivy policy, and
@@ -80,20 +87,47 @@ The base bundle validates:
   dispatcher, and parser files;
 - execution of the repository-owned domain test.
 
-## Terraform domain guarantees
+## Domain-tool guarantees
 
 `ci/test-domain.sh` validates:
 
 - the OCI parent label equals the conformance parent reference;
-- Runner 0.3.2 and contract v001 are inherited unchanged;
-- image identity, runtime identity, and the Terraform registry entry are exact;
-- `runner tool terraform` executes Terraform 1.16.4;
+- Runner 0.3.3 and contract v001 are inherited unchanged;
+- image identity, runtime identity, and the jq, Terraform, terraform-docs, and TFLint
+  registry entries are exact;
+- `runner tool jq` reports 1.8.2 and parses a Terraform-shaped JSON output;
+- `runner tool terraform` executes Terraform 1.17.1;
+- `runner tool terraform-docs` executes version 0.25.1 and generates a resource
+  table from a local fixture;
+- `runner tool tflint` executes version 0.66.0 and reports a missing required Terraform version from a local
+  fixture using the bundled Terraform ruleset, without downloading plugins;
+- Trivy is absent from runtime registration; CI separately scans the exact image
+  and clean Terraform fixture with its pinned scanner container, and detects a
+  known HIGH finding in the intentionally insecure fixture;
 - source references remain consistent across the build, CI, local validation,
   domain test, and candidate documentation;
 - a Terraform child failure preserves exit code 1 through `runner tool`;
 - an unknown tool fails with exit code 4 and `RUNNER_E_NOT_FOUND`;
 - a minimal offline configuration can be formatted, initialized, and validated
-  as the inherited non-root runtime user.
+  as the inherited non-root runtime user; and
+- a locked `hashicorp/random` 3.6.3 fixture can be initialized twice in
+  `-lockfile=readonly` mode and validated without changing its committed lock.
+
+## Reproducibility and network boundaries
+
+Local WSL2 and GitHub Actions use the same `linux/amd64` image, tool lock,
+fixtures, and return-code assertions. Every runtime CLI artifact is downloaded
+over HTTPS and checked against the SHA-256 recorded in
+`contracts/tools-lock/v001/tools.lock.json`.
+
+The `terraform-docs`, bundled TFLint, and built-in-provider fixtures are
+offline. The provider-lock acceptance fixture contacts the Terraform Registry
+to fetch the exact locked `hashicorp/random` 3.6.3 package; project provider
+versions and checksums belong in each project's committed
+`.terraform.lock.hcl`. TFLint configurations that add
+external rulesets own their plugin network access and cache. Trivy's CI scanner
+may fetch misconfiguration checks or vulnerability data; the CI job shares one
+temporary cache across image and Terraform scans, outside the runtime image.
 
 ## Commands
 
