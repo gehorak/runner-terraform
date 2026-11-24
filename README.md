@@ -1,31 +1,34 @@
 # runner-terraform
 
 `runner-terraform` is the reference Terraform-derived image for the Runner
-platform. It adds one domain tool to the immutable runtime and CLI contract
-owned by `runner-base`.
+platform. It adds Terraform, jq, terraform-docs, and TFLint tooling to the
+immutable runtime and CLI contract owned by `runner-base`.
 
 ## Status
 
-Reference candidate for the first repository-level adoption of the
-`runner-base` v0.3.2 derived-image contract. Published status is determined by
-an immutable version tag, its GHCR image, and release evidence; a branch commit
-or CI success alone is not a release. The release contract is documented in
-[docs/RELEASING.md](docs/RELEASING.md).
+The current public release is runner-terraform v0.3.2. This branch prepares
+the v0.4.0 candidate on the released runner-base v0.3.3 parent. Published
+status is determined by an immutable version tag, its GHCR image, and release
+evidence; a branch commit or CI success alone is not a release. The release
+contract is documented in [docs/RELEASING.md](docs/RELEASING.md).
 
 The candidate is bound to:
 
-- parent: `ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0`;
+- parent: `ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2`;
 - Runner contract: `v001`;
-- conformance bundle: `runner-base` commit `5803155a3fe9e737668cdc196bc768f46727ec50`;
-- Terraform: `1.16.4` for `linux/amd64`.
+- conformance bundle: `runner-base` commit `94b070419c6ce4a4e17d7639cff61a4fd1adbc63`;
+- Terraform: `1.17.1` for `linux/amd64`;
+- jq: `1.8.2` for `linux/amd64`;
+- terraform-docs: `0.25.1` for `linux/amd64`.
+- TFLint: `0.66.0` for `linux/amd64`.
 
 ## Derived-image boundary
 
 This repository owns only:
 
 - the `runner-terraform` overlay identity;
-- Terraform installation and integrity evidence;
-- Terraform tool registration;
+- Terraform-domain tool installation and integrity evidence;
+- Terraform-domain tool registration;
 - Terraform-specific tests and documentation.
 
 It does not own or replace the Runner dispatcher, metadata parser, entrypoint,
@@ -37,7 +40,10 @@ Those remain inherited unchanged from the pinned `runner-base` artifact.
 Canonical invocation:
 
 ```text
+runner tool jq [arguments...]
 runner tool terraform [arguments...]
+runner tool terraform-docs [arguments...]
+runner tool tflint [arguments...]
 ```
 
 ## Local validation
@@ -50,7 +56,7 @@ make check
 ```
 
 `make check` performs shell and JSON validation, builds from the exact parent
-digest, checks out the exact conformance commit through tag `v0.3.2`, verifies
+digest, checks out the exact conformance commit through tag `v0.3.3`, verifies
 the commit identity, runs Runner base conformance, and executes the Terraform
 domain contract. It also validates the release workflow, tag-bound manifest
 preparation, immutable-publication recovery, and release-evidence writer.
@@ -66,7 +72,10 @@ make domain-test
 ```bash
 make build
 docker run --rm runner-terraform:dev info --format json
+docker run --rm runner-terraform:dev tool jq --version
 docker run --rm runner-terraform:dev tool terraform version
+docker run --rm runner-terraform:dev tool terraform-docs version
+docker run --rm runner-terraform:dev tool tflint --version
 ```
 
 A working directory can be mounted at the inherited `/workspace` path:
@@ -85,8 +94,28 @@ orchestration remain external responsibilities.
 
 Runtime tool metadata is declared in `image.manifest`. Download source and
 SHA-256 evidence are recorded separately in
-`contracts/tools-lock/v001/tools.lock.json`. The build verifies the locked
-archive before installing Terraform.
+`contracts/tools-lock/v001/tools.lock.json`. The build verifies each locked
+artifact before installing the four declared runtime tools.
+
+`jq` supports machine-readable Terraform outputs such as `terraform output -json`.
+TFLint's Terraform ruleset is bundled in its pinned binary, so the domain test
+does not download plugins. If a project enables external provider rulesets,
+TFLint may access GitHub and writes plugins to its plugin directory; callers
+control that cache and network access. Terraform provider initialization still
+uses the project's provider lock file and any configured registry or mirror.
+
+Trivy is not installed in the runtime image. CI invokes a digest-pinned Trivy
+container to scan the exact candidate image and the repository's Terraform
+acceptance fixture. A separate intentionally insecure S3 fixture verifies that
+the scanner reports its expected high-severity rule. These fixtures are the
+only Terraform configurations tracked in this repository; no production
+infrastructure configuration is present.
+
+Local WSL2 and GitHub Actions both exercise `linux/amd64`. Exact tool artifacts
+are verified against the same SHA-256 lock; provider downloads and optional
+external TFLint plugins remain workload dependencies and are not bundled into
+the image. The acceptance suite fetches the pinned `hashicorp/random` 3.6.3
+provider to verify repeated read-only lockfile initialization.
 
 ## Parent upgrade policy
 

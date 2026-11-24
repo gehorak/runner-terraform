@@ -59,8 +59,8 @@ jobs:
     timeout-minutes: 25
     env:
       CANDIDATE_IMAGE: runner-terraform-build:${{ github.sha }}
-      BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
-      RUNNER_VERSION: 0.3.2
+      BASE_REFERENCE: ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2
+      RUNNER_VERSION: 0.3.3
       RUNNER_CONTRACT_VERSION: v001
     steps:
       - name: Checkout source
@@ -114,14 +114,14 @@ jobs:
 
   runner-base-conformance:
     name: Runner base v001 conformance and Terraform domain contract
-    uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@5803155a3fe9e737668cdc196bc768f46727ec50
+    uses: gehorak/runner-base/.github/workflows/derived-conformance.yml@94b070419c6ce4a4e17d7639cff61a4fd1adbc63
     with:
       image: runner-terraform:conformance
       build_context: .
       dockerfile: Dockerfile
-      base_reference: ghcr.io/gehorak/runner-base:0.3.2@sha256:23ca54058c01e5362e89c2746f794b637584842df803992d8568f64d302a8cf0
+      base_reference: ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2
       expected_contract_version: v001
-      conformance_ref: 5803155a3fe9e737668cdc196bc768f46727ec50
+      conformance_ref: 94b070419c6ce4a4e17d7639cff61a4fd1adbc63
       tools_lock_path: contracts/tools-lock/v001/tools.lock.json
       domain_test_path: ci/test-domain.sh
 
@@ -137,6 +137,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          mkdir -p "${RUNNER_TEMP}/trivy-cache"
           docker build --platform linux/amd64 --tag runner-terraform-scan:${{ github.sha }} .
           docker image save runner-terraform-scan:${{ github.sha }} --output runner-terraform-scan.tar
 
@@ -145,6 +146,28 @@ jobs:
         run: |
           set -Eeuo pipefail
           docker run --rm --volume "${PWD}:/work:ro" \
+            --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache" \
             aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
             image --input /work/runner-terraform-scan.tar \
             --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+
+      - name: Scan Terraform acceptance fixture for high and critical misconfigurations
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --volume "${PWD}:/work:ro" \
+            --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache" \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            config --misconfig-scanners terraform --severity HIGH,CRITICAL --exit-code 1 \
+            /work/ci/fixtures/terraform
+
+      - name: Verify Trivy detects a known Terraform misconfiguration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          report="$(docker run --rm --volume "${PWD}:/work:ro" \
+            --volume "${RUNNER_TEMP}/trivy-cache:/root/.cache" \
+            aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
+            config --misconfig-scanners terraform --format json \
+            /work/ci/fixtures/trivy-insecure)"
+          printf '%s' "${report}" | python3 ci/test-trivy-config-fixture.py

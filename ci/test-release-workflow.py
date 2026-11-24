@@ -26,6 +26,9 @@ required = (
     "anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26",
     "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
     "ci/release-publication-state.py",
+    "ci/inspect-ghcr-manifest.py",
+    "GHCR_USERNAME: ${{ github.actor }}",
+    "GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
     "ci/write-release-evidence.py",
     "softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
 )
@@ -39,7 +42,14 @@ assert workflow.index("Scan exact tested release candidate") < workflow.index(
     "Publish or resume immutable tested image"
 )
 assert workflow.index("Publish or resume immutable tested image") < workflow.index(
+    "Verify published config matches tested candidate"
+)
+assert workflow.index("Verify published config matches tested candidate") < workflow.index(
+    "Resolve published image digest"
+)
+assert workflow.index("Verify published config matches tested candidate") < workflow.index(
     "Publish release evidence assets"
 )
+assert "docker manifest inspect" not in workflow
 
 print("==> release workflow contract passed")

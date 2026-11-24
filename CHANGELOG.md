@@ -9,6 +9,22 @@ Semantic Versioning.
 
 - Non-publishing CI candidate-image build with reusable parent and inherited
   Runner contract checks.
+- jq 1.8.2, terraform-docs 0.25.1, and TFLint 0.66.0 as integrity-pinned
+  runtime tools alongside Terraform.
+- Digest-pinned Trivy image and Terraform-fixture scans in CI.
+- Adopted runner-base v0.3.3 by immutable digest and pinned Terraform CLI 1.17.1.
+- Updated the release workflow docker/login-action pin to v4.7.0.
+
+### Changed
+
+- Removed Trivy from the runtime image; CI retains its separately pinned scanner.
+- Release recovery now distinguishes a confirmed absent GHCR manifest from
+  registry errors and verifies the published config digest against the tested
+  candidate before attestation.
+
+### Tests
+
+- Added functional Terraform documentation, TFLint, and jq acceptance fixtures.
 
 ## [0.3.2]
 
