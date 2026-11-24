@@ -1,4 +1,4 @@
-# runner-terraform derived-image overlay for runner-base v0.3.2.
+# runner-terraform derived-image overlay for runner-base v0.3.3.
 #
 # This file intentionally contains only derived image identity and declarative
 # tool registry fields. Runner version, contract version, platform, runtime user,
@@ -10,11 +10,17 @@ RUNNER_ROLE=terraform
 RUNNER_IMAGE_VERSION=0.1.0
 RUNNER_IMAGE_REVISION=local
 
-RUNNER_DESCRIPTION=Deterministic Terraform runner derived from runner-base
+RUNNER_DESCRIPTION=Deterministic Terraform tooling runner derived from runner-base
 RUNNER_VENDOR=gehorak
 RUNNER_LICENSE=MIT
 RUNNER_REPOSITORY=https://github.com/gehorak/runner-terraform
 
-RUNNER_TOOL_NAMES=terraform
-RUNNER_TOOL_TERRAFORM_VERSION=1.16.4
+RUNNER_TOOL_NAMES=jq,terraform,terraform-docs,tflint
+RUNNER_TOOL_JQ_VERSION=1.8.2
+RUNNER_TOOL_JQ_EXECUTABLE=/usr/local/bin/jq
+RUNNER_TOOL_TERRAFORM_VERSION=1.17.1
 RUNNER_TOOL_TERRAFORM_EXECUTABLE=/usr/local/bin/terraform
+RUNNER_TOOL_TERRAFORM_DOCS_VERSION=0.25.1
+RUNNER_TOOL_TERRAFORM_DOCS_EXECUTABLE=/usr/local/bin/terraform-docs
+RUNNER_TOOL_TFLINT_VERSION=0.66.0
+RUNNER_TOOL_TFLINT_EXECUTABLE=/usr/local/bin/tflint
