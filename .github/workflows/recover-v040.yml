@@ -122,6 +122,8 @@ jobs:
         shell: bash
         env:
           IMAGE: runner-recovery:test
+          EXPECTED_IMAGE_VERSION: ${{ env.VERSION }}
+          EXPECTED_IMAGE_REVISION: ${{ steps.target.outputs.commit }}
         run: |
           set -Eeuo pipefail
           bash ci/run-release-candidate-checks.sh

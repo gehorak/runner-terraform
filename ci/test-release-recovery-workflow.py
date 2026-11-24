@@ -46,6 +46,11 @@ assert workflow.index("Validate fixed recovery target") < workflow.index(
 assert workflow.index("Inspect immutable GHCR image") < workflow.index(
     "Pull and validate exact published image"
 )
+conformance_step = workflow.split(
+    "      - name: Run v0.4.0 derived conformance\n", 1
+)[1].split("\n      - name:", 1)[0]
+assert "EXPECTED_IMAGE_VERSION: ${{ env.VERSION }}" in conformance_step
+assert "EXPECTED_IMAGE_REVISION: ${{ steps.target.outputs.commit }}" in conformance_step
 assert workflow.index("Scan exact published release image") < workflow.index(
     "Attest published image provenance"
 )
