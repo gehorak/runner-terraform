@@ -6,20 +6,21 @@ immutable runtime and CLI contract owned by `runner-base`.
 
 ## Status
 
-The current public release is runner-terraform v0.3.2. This branch prepares
-the v0.4.0 candidate on the released runner-base v0.3.3 parent. Published
-status is determined by an immutable version tag, its GHCR image, and release
-evidence; a branch commit or CI success alone is not a release. The release
-contract is documented in [docs/RELEASING.md](docs/RELEASING.md).
+The current public release is runner-terraform v0.4.1. Published status is
+determined by its version tag, GHCR image digest, and release evidence; a
+branch commit or CI success alone is not a release. The release contract is
+documented in [docs/RELEASING.md](docs/RELEASING.md).
 
-The candidate is bound to:
+The v0.4.1 release is bound to:
 
+- source commit: `32fc7f7eba2e732b80e1b4f1d410dd8294f31149`;
+- image: `ghcr.io/gehorak/runner-terraform:0.4.1@sha256:49791a47e049e05ccf0d4e852c896275b82692a0139c327ff773cd39c8ca005f`;
 - parent: `ghcr.io/gehorak/runner-base:0.3.3@sha256:5fdcd758ef973fbab502858a91d3b362fa7a7cb621d911a7fc972625e546a3c2`;
 - Runner contract: `v001`;
 - conformance bundle: `runner-base` commit `94b070419c6ce4a4e17d7639cff61a4fd1adbc63`;
 - Terraform: `1.17.1` for `linux/amd64`;
 - jq: `1.8.2` for `linux/amd64`;
-- terraform-docs: `0.25.1` for `linux/amd64`.
+- terraform-docs: `0.25.1` for `linux/amd64`;
 - TFLint: `0.66.0` for `linux/amd64`.
 
 ## Derived-image boundary
